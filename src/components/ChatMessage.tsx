@@ -152,8 +152,8 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
             >
               {copied ? (
                 <>
-                  <Check className={`h-3.5 w-3.5 ${isUser ? 'text-green-300' : 'text-green-500'}`} />
-                  <span className={isUser ? 'text-green-300' : 'text-green-500'}>Copied!</span>
+                  <Check className={`h-3.5 w-3.5 ${isUser ? 'text-green-300 dark:text-green-700' : 'text-green-500'}`} />
+                  <span className={isUser ? 'text-green-300 dark:text-green-700' : 'text-green-500'}>Copied!</span>
                 </>
               ) : (
                 <>
