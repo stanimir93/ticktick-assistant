@@ -132,10 +132,21 @@ Example:
 Tool: move_task
 Required: taskId, fromProjectId, toProjectId
 
+Moving works by updating the task's projectId to the target project. There is no separate "move" API — the task is reassigned to the new project. Subtasks move with the parent.
+
+Steps:
+  1. Call list_projects to find the source and target project IDs.
+  2. Call get_project_tasks on the source project to find the task ID.
+  3. Call move_task with all three IDs.
+
 Example — user says "Move 'Buy milk' to Groceries":
-  1. Find the task ID and its current project ID
-  2. Find the target project ID for "Groceries"
-  3. move_task { taskId: "<id>", fromProjectId: "<from>", toProjectId: "<to>" }
+  1. list_projects → find "Shopping" (source) and "Groceries" (target) IDs
+  2. get_project_tasks { projectId: "<shopping-id>" } → find "Buy milk" task ID
+  3. move_task { taskId: "<task-id>", fromProjectId: "<shopping-id>", toProjectId: "<groceries-id>" }
+
+You can also move a task using update_task by setting projectId to the target project:
+  update_task { taskId: "<task-id>", projectId: "<new-project-id>" }
+But prefer move_task for clarity.
 
 ---
 
