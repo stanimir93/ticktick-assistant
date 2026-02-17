@@ -153,6 +153,11 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
                       {children}
                     </li>
                   ),
+                  strong: ({ children, ...props }) => (
+                    <strong {...props} className="font-semibold">
+                      {children}
+                    </strong>
+                  ),
                   em: ({ children, ...props }) => (
                     <em {...props} className="text-muted-foreground font-light not-italic text-xs">
                       {children}
