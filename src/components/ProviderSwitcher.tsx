@@ -1,10 +1,14 @@
+import { Fragment } from 'react';
 import type { ProviderName, ProvidersMap } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
 import { getProvider } from '@/lib/llm';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -12,15 +16,20 @@ import {
 interface ProviderSwitcherProps {
   providers: ProvidersMap;
   activeProvider: string | null;
-  onSwitch: (provider: ProviderName) => void;
-  onModelChange: (model: string) => void;
+  onChange: (provider: ProviderName, model: string) => void;
 }
+
+const providerLabels: Record<ProviderName, string> = {
+  claude: 'Claude',
+  openai: 'OpenAI',
+  gemini: 'Gemini',
+  grok: 'Grok',
+};
 
 export default function ProviderSwitcher({
   providers,
   activeProvider,
-  onSwitch,
-  onModelChange,
+  onChange,
 }: ProviderSwitcherProps) {
   const configured = getConfiguredProviderNames(providers);
 
@@ -29,45 +38,42 @@ export default function ProviderSwitcher({
   const activeConfig = activeProvider
     ? providers[activeProvider as ProviderName]
     : undefined;
-  const modelOptions = activeProvider
-    ? getProvider(activeProvider as ProviderName).models.options
-    : [];
+
+  const currentValue =
+    activeProvider && activeConfig
+      ? `${activeProvider}:${activeConfig.model}`
+      : undefined;
+
+  const handleChange = (value: string) => {
+    const sep = value.indexOf(':');
+    const provider = value.slice(0, sep) as ProviderName;
+    const model = value.slice(sep + 1);
+    onChange(provider, model);
+  };
 
   return (
-    <div className="flex items-center gap-2">
-      <Select
-        value={activeProvider ?? undefined}
-        onValueChange={(v) => onSwitch(v as ProviderName)}
-      >
-        <SelectTrigger className="w-[140px]">
-          <SelectValue placeholder="Select provider" />
-        </SelectTrigger>
-        <SelectContent>
-          {configured.map((name) => (
-            <SelectItem key={name} value={name}>
-              <span className="capitalize">{name}</span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {activeConfig && modelOptions.length > 0 && (
-        <Select
-          value={activeConfig.model}
-          onValueChange={onModelChange}
-        >
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Select model" />
-          </SelectTrigger>
-          <SelectContent>
-            {modelOptions.map((model) => (
-              <SelectItem key={model} value={model}>
-                {model}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-    </div>
+    <Select value={currentValue} onValueChange={handleChange}>
+      <SelectTrigger className="w-[140px] sm:w-[200px]">
+        <SelectValue placeholder="Select model" />
+      </SelectTrigger>
+      <SelectContent>
+        {configured.map((name, i) => {
+          const models = getProvider(name).models.options;
+          return (
+            <Fragment key={name}>
+              {i > 0 && <SelectSeparator />}
+              <SelectGroup>
+                <SelectLabel>{providerLabels[name]}</SelectLabel>
+                {models.map((model) => (
+                  <SelectItem key={`${name}:${model}`} value={`${name}:${model}`}>
+                    {model}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </Fragment>
+          );
+        })}
+      </SelectContent>
+    </Select>
   );
 }

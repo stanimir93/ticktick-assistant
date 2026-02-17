@@ -158,15 +158,14 @@ export default function ChatPage() {
   ]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  const handleModelChange = useCallback(
-    (model: string) => {
-      if (!activeProvider) return;
-      const name = activeProvider as ProviderName;
-      const prev = providers[name];
+  const handleProviderModelChange = useCallback(
+    (provider: ProviderName, model: string) => {
+      setActiveProvider(provider);
+      const prev = providers[provider];
       if (!prev) return;
-      setProviders({ ...providers, [name]: { ...prev, model } });
+      setProviders({ ...providers, [provider]: { ...prev, model } });
     },
-    [activeProvider, providers, setProviders]
+    [providers, setProviders, setActiveProvider]
   );
 
   const configuredProviders = getConfiguredProviderNames(providers);
@@ -400,8 +399,7 @@ export default function ChatPage() {
           <ProviderSwitcher
             providers={providers}
             activeProvider={activeProvider}
-            onSwitch={setActiveProvider}
-            onModelChange={handleModelChange}
+            onChange={handleProviderModelChange}
           />
           <ThemeToggle />
         </div>
