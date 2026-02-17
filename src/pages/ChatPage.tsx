@@ -461,6 +461,7 @@ export default function ChatPage() {
 
       {/* Input */}
       <ChatInput
+        key={conversationId ?? 'new'}
         onSend={handleSend}
         onStop={() => abortControllerRef.current?.abort()}
         disabled={!isReady}
