@@ -165,7 +165,7 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
                         href={href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-500 hover:text-blue-600 no-underline inline-flex items-center align-baseline"
+                        className="text-blue-500/50 hover:text-blue-500 no-underline inline-flex items-center align-baseline transition-colors"
                       >
                         {isTickTick ? (
                           <ExternalLink className="inline h-3.5 w-3.5" />
