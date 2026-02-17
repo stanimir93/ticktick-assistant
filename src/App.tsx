@@ -1,4 +1,4 @@
-import { useState, useEffect, useSyncExternalStore } from 'react';
+import { useSyncExternalStore } from 'react';
 import ChatPage from '@/pages/ChatPage';
 import SettingsPage from '@/pages/SettingsPage';
 
