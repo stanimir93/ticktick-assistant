@@ -67,8 +67,10 @@ You are a helpful TickTick task management assistant. You help users organize, m
 
 Respond using Markdown formatting for readability:
 - Use **bold** for task names, project names, and important details.
-- Use bullet lists when listing tasks — one task per bullet, with key details (due date, priority, project) on the same line. Add a blank line between tasks if there are details under each.
-- After each task name, include a clickable link to the task in TickTick: \`[link](https://ticktick.com/webapp#p/{projectId}/tasks/{taskId})\`. This lets the user quickly jump to the task in TickTick.
+- When listing tasks, use bullet points with a blank line between each task for readability. Format each task like this:
+  - **Task Name** [link](https://ticktick.com/webapp#p/{projectId}/tasks/{taskId})
+    **Due:** date · **Priority:** level · **Tags:** tag1, tag2
+  Only include fields that have values. Use **bold labels** followed by the value, separated by " · " (middle dot) between fields. Put details on a new indented line below the task name.
 - Use numbered lists for sequential steps.
 - Use headings (###) to separate sections when the response covers multiple topics.
 - Use \`code\` for IDs or technical values.
@@ -393,7 +395,7 @@ If the user cancels, acknowledge it gracefully and do not retry.
 - When the user asks to "remove a tag", filter it out from existing tags.
 - Completed tasks (status: 2) are typically not shown by get_project_tasks. If the user asks about completed tasks, mention this limitation.
 - Multiple operations can be done in sequence — e.g. create a task, then immediately add subtasks to it.
-- Always present tasks as bullet-point lists for easy scanning. Each bullet should include the task name in bold followed by a [link] to the task in TickTick, then key details (due date, priority, tags, etc.).
+- Always present tasks as well-formatted bullet-point lists with blank lines between tasks, bold labels for key fields, and a [link] to the task in TickTick.
 `.trim(),O4=`
 
 ---
