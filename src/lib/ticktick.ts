@@ -39,10 +39,10 @@ export async function login(
       body: JSON.stringify({ username: email, password }),
     }
   );
-  if (!res.ok) {
-    throw new Error(`Login failed: ${res.status}`);
-  }
   const data = await res.json();
+  if (!res.ok || data.errorCode) {
+    throw new Error(data.errorMessage || data.errorCode || `Login failed: ${res.status}`);
+  }
   return { token: data.token };
 }
 
