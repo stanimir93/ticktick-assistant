@@ -140,16 +140,20 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
 
         {isThinking && <ThinkingIndicator />}
 
-        {!isUser && message.content && !isThinking && (
-          <div className="mt-2 flex justify-start">
+        {message.content && !isThinking && (
+          <div className={`mt-2 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <button
               onClick={handleCopy}
-              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              className={`flex items-center gap-1 text-xs transition-colors ${
+                isUser
+                  ? 'text-primary-foreground/60 hover:text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
             >
               {copied ? (
                 <>
-                  <Check className="h-3.5 w-3.5 text-green-500" />
-                  <span className="text-green-500">Copied!</span>
+                  <Check className={`h-3.5 w-3.5 ${isUser ? 'text-green-300' : 'text-green-500'}`} />
+                  <span className={isUser ? 'text-green-300' : 'text-green-500'}>Copied!</span>
                 </>
               ) : (
                 <>
