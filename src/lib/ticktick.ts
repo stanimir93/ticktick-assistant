@@ -221,7 +221,7 @@ export async function deleteTask(
   projectId: string,
   taskId: string
 ): Promise<void> {
-  await api(token).delete(`api/ticktick/task/${projectId}/${taskId}`);
+  await api(token).delete(`api/ticktick/project/${projectId}/task/${taskId}`);
 }
 
 export async function completeTask(
