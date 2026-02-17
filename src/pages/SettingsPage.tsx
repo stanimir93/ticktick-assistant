@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
+import { Eye, EyeOff, Copy, Check } from 'lucide-react';
 import type { ProvidersMap, ProviderName, ProviderConfig } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
 import { exchangeCodeForToken } from '@/lib/ticktick';
@@ -47,6 +48,18 @@ export default function SettingsPage() {
   const [exchanging, setExchanging] = useState(false);
   const [credentialsSaved, setCredentialsSaved] = useState(false);
   const credentialsSavedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [showClientId, setShowClientId] = useState(false);
+  const [showClientSecret, setShowClientSecret] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleCopy = (value: string, field: string) => {
+    if (!value.trim()) return;
+    navigator.clipboard.writeText(value.trim());
+    setCopiedField(field);
+    clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = setTimeout(() => setCopiedField(null), 1500);
+  };
 
   const configuredProviders = getConfiguredProviderNames(providers);
   const hasClientCredentials = !!ticktickClientId && !!ticktickClientSecret;
@@ -188,22 +201,69 @@ export default function SettingsPage() {
                     </code>
                     <div className="space-y-1.5">
                       <Label htmlFor="tt-client-id">Client ID</Label>
-                      <Input
-                        id="tt-client-id"
-                        value={clientIdInput}
-                        onChange={(e) => setClientIdInput(e.target.value)}
-                        placeholder="Your TickTick app Client ID"
-                      />
+                      <div className="flex gap-1">
+                        <Input
+                          id="tt-client-id"
+                          type={showClientId ? 'text' : 'password'}
+                          value={clientIdInput}
+                          onChange={(e) => setClientIdInput(e.target.value)}
+                          placeholder="Your TickTick app Client ID"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => setShowClientId(!showClientId)}
+                          tabIndex={-1}
+                        >
+                          {showClientId ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => handleCopy(clientIdInput, 'clientId')}
+                          disabled={!clientIdInput.trim()}
+                          tabIndex={-1}
+                        >
+                          {copiedField === 'clientId' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="tt-client-secret">Client Secret</Label>
-                      <Input
-                        id="tt-client-secret"
-                        type="password"
-                        value={clientSecretInput}
-                        onChange={(e) => setClientSecretInput(e.target.value)}
-                        placeholder="Your TickTick app Client Secret"
-                      />
+                      <div className="flex gap-1">
+                        <Input
+                          id="tt-client-secret"
+                          type={showClientSecret ? 'text' : 'password'}
+                          value={clientSecretInput}
+                          onChange={(e) => setClientSecretInput(e.target.value)}
+                          placeholder="Your TickTick app Client Secret"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => setShowClientSecret(!showClientSecret)}
+                          tabIndex={-1}
+                        >
+                          {showClientSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => handleCopy(clientSecretInput, 'clientSecret')}
+                          disabled={!clientSecretInput.trim()}
+                          tabIndex={-1}
+                        >
+                          {copiedField === 'clientSecret' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
                     </div>
                     <Button
                       onClick={handleSaveCredentials}

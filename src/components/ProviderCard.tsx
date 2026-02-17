@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Eye, EyeOff, Copy, Check } from 'lucide-react';
 import type { ProviderName, ProviderConfig } from '@/lib/storage';
 import { getProvider } from '@/lib/llm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,8 +45,19 @@ export default function ProviderCard({
     ok: boolean;
     message: string;
   } | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const isConfigured = !!config?.apiKey;
+
+  const handleCopy = () => {
+    if (!apiKey.trim()) return;
+    navigator.clipboard.writeText(apiKey.trim());
+    setCopied(true);
+    clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = setTimeout(() => setCopied(false), 1500);
+  };
 
   const handleSave = () => {
     if (!apiKey.trim()) return;
@@ -106,13 +118,36 @@ export default function ProviderCard({
       <CardContent className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor={`${name}-key`}>API Key</Label>
-          <Input
-            id={`${name}-key`}
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder={isConfigured ? '••••••••' : 'Enter API key'}
-          />
+          <div className="flex gap-1">
+            <Input
+              id={`${name}-key`}
+              type={showApiKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={isConfigured ? '••••••••' : 'Enter API key'}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              onClick={() => setShowApiKey(!showApiKey)}
+              tabIndex={-1}
+            >
+              {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="shrink-0"
+              onClick={handleCopy}
+              disabled={!apiKey.trim()}
+              tabIndex={-1}
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-1.5">
