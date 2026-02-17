@@ -1,20 +1,14 @@
+import ky from 'ky';
+
 const PROXY_URL = import.meta.env.VITE_PROXY_URL || '';
 
-function authHeaders(token: string): Record<string, string> {
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-  };
-}
-
-async function safeJson<T>(res: Response): Promise<T> {
-  const text = await res.text();
-  if (!text) return {} as T;
-  try {
-    return JSON.parse(text) as T;
-  } catch {
-    throw new Error(`Invalid JSON response: ${text.slice(0, 200)}`);
-  }
+function api(token: string) {
+  return ky.create({
+    prefixUrl: PROXY_URL || undefined,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }
 
 // --- OAuth ---
@@ -36,22 +30,18 @@ export async function exchangeCodeForToken(
   clientSecret: string,
   redirectUri: string
 ): Promise<{ accessToken: string }> {
-  const res = await fetch(`${PROXY_URL}/api/ticktick-oauth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      grant_type: 'authorization_code',
-      client_id: clientId,
-      client_secret: clientSecret,
-      code,
-      redirect_uri: redirectUri,
-    }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Token exchange failed: ${text}`);
-  }
-  const data = await res.json();
+  const data = await ky
+    .post(`${PROXY_URL}/api/ticktick-oauth/token`, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri,
+      }),
+    })
+    .json<{ access_token: string }>();
   return { accessToken: data.access_token };
 }
 
@@ -66,11 +56,7 @@ export interface Project {
 }
 
 export async function getProjects(token: string): Promise<Project[]> {
-  const res = await fetch(`${PROXY_URL}/api/ticktick/project`, {
-    headers: authHeaders(token),
-  });
-  if (!res.ok) throw new Error(`Failed to fetch projects: ${res.status}`);
-  return safeJson<Project[]>(res);
+  return api(token).get('api/ticktick/project').json<Project[]>();
 }
 
 // --- Tasks ---
@@ -98,12 +84,9 @@ export async function getProjectData(
   token: string,
   projectId: string
 ): Promise<ProjectData> {
-  const res = await fetch(
-    `${PROXY_URL}/api/ticktick/project/${projectId}/data`,
-    { headers: authHeaders(token) }
-  );
-  if (!res.ok) throw new Error(`Failed to fetch project data: ${res.status}`);
-  return safeJson<ProjectData>(res);
+  return api(token)
+    .get(`api/ticktick/project/${projectId}/data`)
+    .json<ProjectData>();
 }
 
 export async function createTask(
@@ -120,13 +103,7 @@ export async function createTask(
     tags?: string[];
   }
 ): Promise<Task> {
-  const res = await fetch(`${PROXY_URL}/api/ticktick/task`, {
-    method: 'POST',
-    headers: authHeaders(token),
-    body: JSON.stringify(task),
-  });
-  if (!res.ok) throw new Error(`Failed to create task: ${res.status}`);
-  return safeJson<Task>(res);
+  return api(token).post('api/ticktick/task', { json: task }).json<Task>();
 }
 
 export async function updateTask(
@@ -144,13 +121,11 @@ export async function updateTask(
     projectId?: string;
   }
 ): Promise<Task> {
-  const res = await fetch(`${PROXY_URL}/api/ticktick/task/${taskId}`, {
-    method: 'POST',
-    headers: authHeaders(token),
-    body: JSON.stringify(updates),
+  const res = await api(token).post(`api/ticktick/task/${taskId}`, {
+    json: updates,
   });
-  if (!res.ok) throw new Error(`Failed to update task: ${res.status}`);
-  return safeJson<Task>(res);
+  const text = await res.text();
+  return text ? (JSON.parse(text) as Task) : ({} as Task);
 }
 
 export async function deleteTask(
@@ -158,14 +133,7 @@ export async function deleteTask(
   projectId: string,
   taskId: string
 ): Promise<void> {
-  const res = await fetch(
-    `${PROXY_URL}/api/ticktick/task/${projectId}/${taskId}`,
-    {
-      method: 'DELETE',
-      headers: authHeaders(token),
-    }
-  );
-  if (!res.ok) throw new Error(`Failed to delete task: ${res.status}`);
+  await api(token).delete(`api/ticktick/task/${projectId}/${taskId}`);
 }
 
 export async function completeTask(
@@ -173,12 +141,7 @@ export async function completeTask(
   projectId: string,
   taskId: string
 ): Promise<void> {
-  const res = await fetch(
-    `${PROXY_URL}/api/ticktick/project/${projectId}/task/${taskId}/complete`,
-    {
-      method: 'POST',
-      headers: authHeaders(token),
-    }
+  await api(token).post(
+    `api/ticktick/project/${projectId}/task/${taskId}/complete`
   );
-  if (!res.ok) throw new Error(`Failed to complete task: ${res.status}`);
 }
