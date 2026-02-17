@@ -17,6 +17,7 @@ interface ProviderSwitcherProps {
   providers: ProvidersMap;
   activeProvider: string | null;
   onChange: (provider: ProviderName, model: string) => void;
+  disabled?: boolean;
 }
 
 const providerLabels: Record<ProviderName, string> = {
@@ -30,6 +31,7 @@ export default function ProviderSwitcher({
   providers,
   activeProvider,
   onChange,
+  disabled,
 }: ProviderSwitcherProps) {
   const configured = getConfiguredProviderNames(providers);
 
@@ -52,7 +54,7 @@ export default function ProviderSwitcher({
   };
 
   return (
-    <Select value={currentValue} onValueChange={handleChange}>
+    <Select value={currentValue} onValueChange={handleChange} disabled={disabled}>
       <SelectTrigger className="w-[140px] sm:w-[200px]">
         <SelectValue placeholder="Select model" />
       </SelectTrigger>

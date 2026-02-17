@@ -409,6 +409,7 @@ export default function ChatPage() {
             providers={providers}
             activeProvider={activeProvider}
             onChange={handleProviderModelChange}
+            disabled={loading}
           />
           <ThemeToggle />
         </div>
