@@ -137,11 +137,22 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
               <Markdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  a: ({ children, ...props }) => (
-                    <a {...props} target="_blank" rel="noopener noreferrer">
-                      {children}
-                    </a>
-                  ),
+                  a: ({ children, href, ...props }) => {
+                    if (
+                      !href ||
+                      href.includes('{') ||
+                      href.includes('}') ||
+                      href.includes('undefined') ||
+                      href.includes('null')
+                    ) {
+                      return <span>{children}</span>;
+                    }
+                    return (
+                      <a {...props} href={href} target="_blank" rel="noopener noreferrer">
+                        {children}
+                      </a>
+                    );
+                  },
                 }}
               >
                 {message.content}
