@@ -4,6 +4,16 @@ import { Eye, EyeOff, Copy, Check } from 'lucide-react';
 import type { ProvidersMap, ProviderName, ProviderConfig } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
 import { type ApiVersion, API_VERSION_KEY, DEFAULT_API_VERSION, V2_USERNAME_KEY, V2_PASSWORD_KEY, V2_SESSION_KEY } from '@/lib/api-version';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { signIn as v2SignIn } from '@/lib/ticktick-v2';
 import ProviderCard from '@/components/ProviderCard';
 import { Button } from '@/components/ui/button';
@@ -12,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import ThemeToggle from '@/components/ThemeToggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
@@ -50,7 +61,8 @@ export default function SettingsPage() {
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   // v2 Beta state
-  const [apiVersion] = useLocalStorage<ApiVersion>(API_VERSION_KEY, DEFAULT_API_VERSION);
+  const [apiVersion, setApiVersion] = useLocalStorage<ApiVersion>(API_VERSION_KEY, DEFAULT_API_VERSION);
+  const [showBetaDialog, setShowBetaDialog] = useState(false);
   const [v2Username, setV2Username] = useLocalStorage<string>(V2_USERNAME_KEY, '');
   const [_v2Password, setV2Password] = useLocalStorage<string>(V2_PASSWORD_KEY, '');
   const [v2Session, setV2Session] = useLocalStorage<string | null>(V2_SESSION_KEY, null);
@@ -364,6 +376,55 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </section>
+
+      {/* v2 Beta Toggle */}
+      <section className="mb-8">
+        <h2 className="mb-4 text-lg font-semibold">API Version</h2>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Use v2 API</span>
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-orange-400 text-orange-500">
+                    BETA
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Enables advanced features like cross-project filtering, completed tasks, tag management, and subtasks.
+                </p>
+              </div>
+              <Switch
+                checked={apiVersion === 'v2'}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setShowBetaDialog(true);
+                  } else {
+                    setApiVersion('v1');
+                  }
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <AlertDialog open={showBetaDialog} onOpenChange={setShowBetaDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enable v2 Beta API?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The v2 API is experimental and may be unstable. You might experience broken features, unexpected errors, or data inconsistencies. Use at your own risk.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setApiVersion('v2')}>
+              Enable Beta
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* v2 Beta Auth Section */}
       {apiVersion === 'v2' && (
