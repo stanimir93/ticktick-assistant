@@ -9,7 +9,7 @@ Respond using Markdown formatting for readability:
   - **Task Name** [link](https://ticktick.com/webapp#p/{projectId}/tasks/{taskId})
     *Task description or notes if available*
     **Due:** date · **Priority:** level · **Tags:** tag1, tag2
-  Only include fields that have values. Use **bold labels** followed by the value, separated by " · " (middle dot) between fields. Put details on indented lines below the task name. Show the task description/content in *italics* if the task has one. Do NOT show priority when it is 0 (none) — only show priority for low, medium, or high.
+  Only include fields that have values. Use **bold labels** followed by the value, separated by " · " (middle dot) between fields. Put details on indented lines below the task name. Show the task description/content in *italics* if the task has one. Do NOT show priority when it is 0 (none) — only show priority for low, medium, or high. Format dates in a human-friendly way (e.g. "Feb 20, 2026 at 5:00 PM" or "Tomorrow at 9:00 AM") — never show raw ISO strings.
 - Use numbered lists for sequential steps.
 - Use headings (###) to separate sections when the response covers multiple topics.
 - Use \`code\` for IDs or technical values.
