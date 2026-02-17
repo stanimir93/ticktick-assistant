@@ -18,9 +18,6 @@ import ConversationList from '@/components/ConversationList';
 import ProviderSwitcher from '@/components/ProviderSwitcher';
 import { Button } from '@/components/ui/button';
 
-interface ChatPageProps {
-  onNavigateSettings: () => void;
-}
 
 type ChatAction =
   | { type: 'add_message'; message: ChatMessageData }
@@ -158,7 +155,7 @@ function deriveTitle(messages: ChatMessageData[]): string {
   return text.length < firstUser.content.length ? text + '...' : text;
 }
 
-export default function ChatPage({ onNavigateSettings }: ChatPageProps) {
+export default function ChatPage() {
   const [messages, dispatch] = useReducer(chatReducer, []);
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -431,9 +428,12 @@ export default function ChatPage({ onNavigateSettings }: ChatPageProps) {
               activeProvider={activeProvider}
               onSwitch={setActiveProvider}
             />
-            <Button onClick={onNavigateSettings} variant="outline" size="sm">
+            <a
+              href="#/settings"
+              className="inline-flex h-8 items-center rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+            >
               Settings
-            </Button>
+            </a>
           </div>
         </header>
 
@@ -448,13 +448,12 @@ export default function ChatPage({ onNavigateSettings }: ChatPageProps) {
                 {configuredProviders.length === 0 && (
                   <p>Configure at least one LLM provider in Settings.</p>
                 )}
-                <Button
-                  onClick={onNavigateSettings}
-                  size="sm"
-                  className="mt-2"
+                <a
+                  href="#/settings"
+                  className="mt-2 inline-flex h-8 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                 >
                   Go to Settings
-                </Button>
+                </a>
               </div>
             )}
 

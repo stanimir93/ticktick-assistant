@@ -15,11 +15,7 @@ const allProviders: ProviderName[] = ['claude', 'openai', 'gemini', 'grok'];
 
 const REDIRECT_URI = window.location.origin + window.location.pathname;
 
-interface SettingsPageProps {
-  onNavigateChat: () => void;
-}
-
-export default function SettingsPage({ onNavigateChat }: SettingsPageProps) {
+export default function SettingsPage() {
   const [providers, setProviders] = useLocalStorage<ProvidersMap>(
     'llm-providers',
     {}
@@ -134,7 +130,12 @@ export default function SettingsPage({ onNavigateChat }: SettingsPageProps) {
     <div className="mx-auto max-w-2xl p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Settings</h1>
-        <Button onClick={onNavigateChat}>Back to Chat</Button>
+        <a
+          href="#/"
+          className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          Back to Chat
+        </a>
       </div>
 
       {/* TickTick Section */}
