@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { Separator } from '@/components/ui/separator';
 
 const allProviders: ProviderName[] = ['claude', 'openai', 'gemini', 'grok'];
 
@@ -127,16 +129,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Settings</h1>
-        <a
-          href="#/"
-          className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          Back to Chat
-        </a>
-      </div>
+    <div className="flex h-full flex-col">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-2 h-4" />
+        <h1 className="text-sm font-semibold">Settings</h1>
+      </header>
+      <div className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto p-6">
 
       {/* TickTick Section */}
       <section className="mb-8">
@@ -299,6 +298,7 @@ export default function SettingsPage() {
           </Card>
         </section>
       )}
+      </div>
     </div>
   );
 }

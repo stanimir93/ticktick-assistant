@@ -1,11 +1,11 @@
 import { useSyncExternalStore } from 'react';
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/AppSidebar';
 import ChatPage from '@/pages/ChatPage';
 import SettingsPage from '@/pages/SettingsPage';
 
-type View = 'chat' | 'settings';
-
-function hashToView(): View {
-  return window.location.hash === '#/settings' ? 'settings' : 'chat';
+function getHash(): string {
+  return window.location.hash || '#/';
 }
 
 function subscribeToHash(callback: () => void) {
@@ -14,11 +14,28 @@ function subscribeToHash(callback: () => void) {
 }
 
 export default function App() {
-  const view = useSyncExternalStore(subscribeToHash, hashToView);
+  const hash = useSyncExternalStore(subscribeToHash, getHash);
 
-  if (view === 'settings') {
-    return <SettingsPage />;
+  let page: 'chat' | 'settings' = 'chat';
+  let conversationId: string | null = null;
+
+  if (hash === '#/settings') {
+    page = 'settings';
+  } else {
+    const match = hash.match(/^#\/chat\/(.+)$/);
+    if (match) conversationId = match[1];
   }
 
-  return <ChatPage />;
+  return (
+    <SidebarProvider>
+      <AppSidebar activeConversationId={conversationId} />
+      <SidebarInset>
+        {page === 'settings' ? (
+          <SettingsPage />
+        ) : (
+          <ChatPage conversationId={conversationId} />
+        )}
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }
