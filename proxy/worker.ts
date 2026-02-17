@@ -29,8 +29,34 @@ function getCorsHeaders(origin: string | null, env: Env): Record<string, string>
   };
 }
 
+// Headers that should NOT be forwarded to upstream APIs
+const STRIP_HEADERS = new Set([
+  'host',
+  'origin',
+  'referer',
+  'cf-connecting-ip',
+  'cf-ipcountry',
+  'cf-ray',
+  'cf-visitor',
+  'cf-worker',
+  'x-forwarded-for',
+  'x-forwarded-proto',
+  'x-real-ip',
+]);
+
+function cleanHeaders(request: Request): Headers {
+  const cleaned = new Headers();
+  for (const [key, value] of request.headers.entries()) {
+    if (!STRIP_HEADERS.has(key.toLowerCase())) {
+      cleaned.set(key, value);
+    }
+  }
+  return cleaned;
+}
+
 const routes: Record<string, string> = {
-  '/api/ticktick/': 'https://api.ticktick.com/api/v2/',
+  '/api/ticktick/': 'https://api.ticktick.com/open/v1/',
+  '/api/ticktick-oauth/': 'https://ticktick.com/oauth/',
   '/api/llm/anthropic/': 'https://api.anthropic.com/',
   '/api/llm/openai/': 'https://api.openai.com/',
   '/api/llm/gemini/': 'https://generativelanguage.googleapis.com/',
@@ -69,7 +95,7 @@ export default {
 
     const response = await fetch(targetUrl, {
       method: request.method,
-      headers: request.headers,
+      headers: cleanHeaders(request),
       body: request.body,
     });
 

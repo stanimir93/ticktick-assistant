@@ -4,8 +4,7 @@ import * as ticktick from './ticktick';
 export const toolDefinitions: ToolDefinition[] = [
   {
     name: 'list_projects',
-    description:
-      'Get all TickTick projects/lists. Returns project names, IDs, and metadata.',
+    description: 'Get all TickTick projects/lists. Returns project names and IDs.',
     parameters: {
       type: 'object',
       properties: {},
@@ -13,28 +12,13 @@ export const toolDefinitions: ToolDefinition[] = [
   },
   {
     name: 'get_project_tasks',
-    description:
-      'Get all tasks in a specific project. Can filter by project name or ID.',
+    description: 'Get all tasks in a specific project by project ID.',
     parameters: {
       type: 'object',
       properties: {
         projectId: {
           type: 'string',
           description: 'The project ID to get tasks for',
-        },
-      },
-      required: ['projectId'],
-    },
-  },
-  {
-    name: 'get_project_sections',
-    description: 'Get all sections/columns for a specific project.',
-    parameters: {
-      type: 'object',
-      properties: {
-        projectId: {
-          type: 'string',
-          description: 'The project ID to get sections for',
         },
       },
       required: ['projectId'],
@@ -56,27 +40,26 @@ export const toolDefinitions: ToolDefinition[] = [
           type: 'number',
           description: 'Priority: 0=none, 1=low, 3=medium, 5=high',
         },
-        columnId: {
-          type: 'string',
-          description: 'Section/column ID to place the task in',
-        },
         dueDate: {
           type: ['string', 'null'],
-          description:
-            'Due date in ISO 8601 format (e.g. "2026-02-20T16:00:00.000+0000"), or null',
+          description: 'Due date in ISO 8601 format (e.g. "2026-02-20T16:00:00.000+0000")',
         },
         startDate: {
           type: ['string', 'null'],
-          description: 'Start date in ISO 8601 format, or null',
+          description: 'Start date in ISO 8601 format',
         },
         isAllDay: {
           type: 'boolean',
-          description: 'True if the due date is an all-day date (no specific time)',
+          description: 'True if the due date is all-day (no specific time)',
         },
         timeZone: {
           type: 'string',
-          description:
-            'Timezone for the due date (e.g. "Europe/Sofia", "America/New_York")',
+          description: 'Timezone (e.g. "Europe/Sofia", "America/New_York")',
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Tags to assign to the task',
         },
       },
       required: ['projectId', 'title'],
@@ -84,16 +67,12 @@ export const toolDefinitions: ToolDefinition[] = [
   },
   {
     name: 'update_task',
-    description:
-      'Update a task — rename, change description, priority, due date, etc.',
+    description: 'Update a task — rename, change description, priority, due date, tags, etc.',
     parameters: {
       type: 'object',
       properties: {
         taskId: { type: 'string', description: 'The task ID' },
-        projectId: {
-          type: 'string',
-          description: 'The project ID the task belongs to',
-        },
+        projectId: { type: 'string', description: 'The project ID the task belongs to' },
         title: { type: 'string', description: 'New task title' },
         content: { type: 'string', description: 'New task description' },
         priority: {
@@ -102,8 +81,7 @@ export const toolDefinitions: ToolDefinition[] = [
         },
         dueDate: {
           type: ['string', 'null'],
-          description:
-            'Due date in ISO 8601 format (e.g. "2026-02-20T16:00:00.000+0000"), or null to remove',
+          description: 'Due date in ISO 8601 format, or null to remove',
         },
         startDate: {
           type: ['string', 'null'],
@@ -111,71 +89,19 @@ export const toolDefinitions: ToolDefinition[] = [
         },
         isAllDay: {
           type: 'boolean',
-          description:
-            'True if the due date is an all-day date (no specific time)',
+          description: 'True if the due date is all-day (no specific time)',
         },
         timeZone: {
           type: 'string',
-          description:
-            'Timezone for the due date (e.g. "Europe/Sofia", "America/New_York")',
+          description: 'Timezone for the due date',
+        },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Replace all tags on the task',
         },
       },
       required: ['taskId', 'projectId'],
-    },
-  },
-  {
-    name: 'move_task_to_section',
-    description:
-      'Move a task to a different section/column within the same project.',
-    parameters: {
-      type: 'object',
-      properties: {
-        taskId: { type: 'string', description: 'The task ID' },
-        projectId: { type: 'string', description: 'The project ID' },
-        columnId: {
-          type: 'string',
-          description: 'Target section/column ID',
-        },
-      },
-      required: ['taskId', 'projectId', 'columnId'],
-    },
-  },
-  {
-    name: 'move_task_to_project',
-    description:
-      'Move a task to a different project. User will be asked to confirm.',
-    requiresConfirmation: true,
-    parameters: {
-      type: 'object',
-      properties: {
-        taskId: { type: 'string', description: 'The task ID' },
-        fromProjectId: {
-          type: 'string',
-          description: 'Current project ID',
-        },
-        toProjectId: {
-          type: 'string',
-          description: 'Target project ID',
-        },
-        toColumnId: {
-          type: 'string',
-          description:
-            'Target section/column ID in the new project (optional)',
-        },
-        title: {
-          type: 'string',
-          description: 'Task title (for confirmation display)',
-        },
-        fromProjectName: {
-          type: 'string',
-          description: 'Current project name (for confirmation display)',
-        },
-        toProjectName: {
-          type: 'string',
-          description: 'Target project name (for confirmation display)',
-        },
-      },
-      required: ['taskId', 'fromProjectId', 'toProjectId'],
     },
   },
   {
@@ -191,83 +117,22 @@ export const toolDefinitions: ToolDefinition[] = [
     },
   },
   {
-    name: 'batch_update_tasks',
-    description:
-      'Update multiple tasks at once. Each task object must include taskId and projectId plus fields to update.',
-    parameters: {
-      type: 'object',
-      properties: {
-        tasks: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              taskId: { type: 'string' },
-              projectId: { type: 'string' },
-              title: { type: 'string' },
-              content: { type: 'string' },
-              priority: { type: 'number' },
-              columnId: { type: 'string' },
-              status: { type: 'number' },
-              dueDate: { type: ['string', 'null'] },
-              startDate: { type: ['string', 'null'] },
-              isAllDay: { type: 'boolean' },
-              timeZone: { type: 'string' },
-            },
-            required: ['taskId', 'projectId'],
-          },
-          description: 'Array of task updates',
-        },
-      },
-      required: ['tasks'],
-    },
-  },
-  {
     name: 'delete_task',
-    description:
-      'Delete a task. This is destructive and cannot be undone — the user will be asked to confirm.',
+    description: 'Delete a task. This is destructive and cannot be undone — the user will be asked to confirm.',
     requiresConfirmation: true,
     parameters: {
       type: 'object',
       properties: {
         taskId: { type: 'string', description: 'The task ID' },
         projectId: { type: 'string', description: 'The project ID' },
-        title: {
-          type: 'string',
-          description: 'Task title (for confirmation display)',
-        },
+        title: { type: 'string', description: 'Task title (for confirmation display)' },
       },
       required: ['taskId', 'projectId'],
     },
   },
   {
-    name: 'batch_delete_tasks',
-    description:
-      'Delete multiple tasks at once. Destructive and cannot be undone — user will be asked to confirm.',
-    requiresConfirmation: true,
-    parameters: {
-      type: 'object',
-      properties: {
-        tasks: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              taskId: { type: 'string' },
-              projectId: { type: 'string' },
-              title: { type: 'string' },
-            },
-            required: ['taskId', 'projectId'],
-          },
-        },
-      },
-      required: ['tasks'],
-    },
-  },
-  {
     name: 'flag_task',
-    description:
-      'Flag a task by adding the "flagged" tag. Flagged tasks can be listed with get_flagged_tasks.',
+    description: 'Flag a task by adding the "flagged" tag. Flagged tasks can be listed with get_flagged_tasks.',
     parameters: {
       type: 'object',
       properties: {
@@ -291,8 +156,7 @@ export const toolDefinitions: ToolDefinition[] = [
   },
   {
     name: 'get_flagged_tasks',
-    description:
-      'Get all tasks across all projects that have the "flagged" tag.',
+    description: 'Get all tasks across all projects that have the "flagged" tag.',
     parameters: {
       type: 'object',
       properties: {},
@@ -300,23 +164,23 @@ export const toolDefinitions: ToolDefinition[] = [
   },
 ];
 
-// Cached data from batch/check to avoid repeated fetches
-let cachedData: Awaited<ReturnType<typeof ticktick.getAllData>> | null = null;
-let cacheTimestamp = 0;
-const CACHE_TTL = 30_000; // 30 seconds
+// Cache for project data
+let projectsCache: ticktick.Project[] | null = null;
+let projectsCacheTime = 0;
+const CACHE_TTL = 30_000;
 
-async function getCachedData(token: string) {
+async function getCachedProjects(token: string) {
   const now = Date.now();
-  if (!cachedData || now - cacheTimestamp > CACHE_TTL) {
-    cachedData = await ticktick.getAllData(token);
-    cacheTimestamp = now;
+  if (!projectsCache || now - projectsCacheTime > CACHE_TTL) {
+    projectsCache = await ticktick.getProjects(token);
+    projectsCacheTime = now;
   }
-  return cachedData;
+  return projectsCache;
 }
 
 export function invalidateCache() {
-  cachedData = null;
-  cacheTimestamp = 0;
+  projectsCache = null;
+  projectsCacheTime = 0;
 }
 
 export async function executeTool(
@@ -327,229 +191,155 @@ export async function executeTool(
   try {
     switch (name) {
       case 'list_projects': {
-        const data = await getCachedData(token);
-        const projects = data.projectProfiles.map((p) => ({
-          id: p.id,
-          name: p.name,
-          color: p.color,
-          kind: p.kind,
-        }));
-        return JSON.stringify(projects);
+        const projects = await getCachedProjects(token);
+        return JSON.stringify(
+          projects.map((p) => ({
+            id: p.id,
+            name: p.name,
+            color: p.color,
+            kind: p.kind,
+          }))
+        );
       }
 
       case 'get_project_tasks': {
-        const data = await getCachedData(token);
-        const tasks = data.syncTaskBean.update.filter(
-          (t) => t.projectId === args.projectId
+        const data = await ticktick.getProjectData(
+          token,
+          args.projectId as string
         );
         return JSON.stringify(
-          tasks.map((t) => ({
+          (data.tasks ?? []).map((t) => ({
             id: t.id,
             title: t.title,
             content: t.content,
             status: t.status,
             priority: t.priority,
-            columnId: t.columnId,
             tags: t.tags,
             dueDate: t.dueDate,
           }))
         );
       }
 
-      case 'get_project_sections': {
-        const sections = await ticktick.getProjectSections(
-          token,
-          args.projectId as string
-        );
-        return JSON.stringify(sections);
-      }
-
       case 'create_task': {
         invalidateCache();
-        const newTask: Record<string, unknown> = {
-          id: crypto.randomUUID().replace(/-/g, '').slice(0, 24),
-          projectId: args.projectId,
-          title: args.title,
-          content: args.content || '',
-          priority: args.priority ?? 0,
-          columnId: args.columnId,
-          status: 0,
-        };
-        if (args.dueDate !== undefined) newTask.dueDate = args.dueDate;
-        if (args.startDate !== undefined) newTask.startDate = args.startDate;
-        if (args.isAllDay !== undefined) newTask.isAllDay = args.isAllDay;
-        if (args.timeZone !== undefined) newTask.timeZone = args.timeZone;
-        const result = await ticktick.batchTaskUpdate(token, {
-          add: [newTask],
+        const task = await ticktick.createTask(token, {
+          title: args.title as string,
+          projectId: args.projectId as string,
+          content: args.content as string | undefined,
+          priority: args.priority as number | undefined,
+          dueDate: args.dueDate as string | undefined,
+          startDate: args.startDate as string | undefined,
+          isAllDay: args.isAllDay as boolean | undefined,
+          timeZone: args.timeZone as string | undefined,
+          tags: args.tags as string[] | undefined,
         });
-        return JSON.stringify(result);
+        return JSON.stringify(task);
       }
 
       case 'update_task': {
         invalidateCache();
-        const updatePayload: Record<string, unknown> = {
-          id: args.taskId,
+        const updates: Record<string, unknown> = {
           projectId: args.projectId,
         };
-        if (args.title !== undefined) updatePayload.title = args.title;
-        if (args.content !== undefined) updatePayload.content = args.content;
-        if (args.priority !== undefined) updatePayload.priority = args.priority;
-        if (args.dueDate !== undefined) updatePayload.dueDate = args.dueDate;
-        if (args.startDate !== undefined)
-          updatePayload.startDate = args.startDate;
-        if (args.isAllDay !== undefined) updatePayload.isAllDay = args.isAllDay;
-        if (args.timeZone !== undefined) updatePayload.timeZone = args.timeZone;
-        const result = await ticktick.batchTaskUpdate(token, {
-          update: [updatePayload],
-        });
-        return JSON.stringify(result);
-      }
-
-      case 'move_task_to_section': {
-        invalidateCache();
-        const result = await ticktick.batchTaskUpdate(token, {
-          update: [
-            {
-              id: args.taskId,
-              projectId: args.projectId,
-              columnId: args.columnId,
-            },
-          ],
-        });
-        return JSON.stringify(result);
-      }
-
-      case 'move_task_to_project': {
-        invalidateCache();
-        const result = await ticktick.moveTaskToProject(token, [
-          {
-            taskId: args.taskId as string,
-            fromProjectId: args.fromProjectId as string,
-            toProjectId: args.toProjectId as string,
-          },
-        ]);
-        return JSON.stringify(result);
+        if (args.title !== undefined) updates.title = args.title;
+        if (args.content !== undefined) updates.content = args.content;
+        if (args.priority !== undefined) updates.priority = args.priority;
+        if (args.dueDate !== undefined) updates.dueDate = args.dueDate;
+        if (args.startDate !== undefined) updates.startDate = args.startDate;
+        if (args.isAllDay !== undefined) updates.isAllDay = args.isAllDay;
+        if (args.timeZone !== undefined) updates.timeZone = args.timeZone;
+        if (args.tags !== undefined) updates.tags = args.tags;
+        const task = await ticktick.updateTask(
+          token,
+          args.taskId as string,
+          updates as Parameters<typeof ticktick.updateTask>[2]
+        );
+        return JSON.stringify(task);
       }
 
       case 'complete_task': {
         invalidateCache();
-        const result = await ticktick.batchTaskUpdate(token, {
-          update: [
-            {
-              id: args.taskId,
-              projectId: args.projectId,
-              status: 2,
-            },
-          ],
-        });
-        return JSON.stringify(result);
-      }
-
-      case 'batch_update_tasks': {
-        invalidateCache();
-        const tasks = args.tasks as Array<Record<string, unknown>>;
-        const updates = tasks.map((t) => {
-          const update: Record<string, unknown> = {
-            id: t.taskId,
-            projectId: t.projectId,
-          };
-          if (t.title !== undefined) update.title = t.title;
-          if (t.content !== undefined) update.content = t.content;
-          if (t.priority !== undefined) update.priority = t.priority;
-          if (t.columnId !== undefined) update.columnId = t.columnId;
-          if (t.status !== undefined) update.status = t.status;
-          if (t.dueDate !== undefined) update.dueDate = t.dueDate;
-          if (t.startDate !== undefined) update.startDate = t.startDate;
-          if (t.isAllDay !== undefined) update.isAllDay = t.isAllDay;
-          if (t.timeZone !== undefined) update.timeZone = t.timeZone;
-          return update;
-        });
-        const result = await ticktick.batchTaskUpdate(token, {
-          update: updates,
-        });
-        return JSON.stringify(result);
+        await ticktick.completeTask(
+          token,
+          args.projectId as string,
+          args.taskId as string
+        );
+        return JSON.stringify({ success: true });
       }
 
       case 'delete_task': {
         invalidateCache();
-        const result = await ticktick.batchTaskUpdate(token, {
-          delete: [{ taskId: args.taskId, projectId: args.projectId }],
-        });
-        return JSON.stringify(result);
-      }
-
-      case 'batch_delete_tasks': {
-        invalidateCache();
-        const tasks = args.tasks as Array<{
-          taskId: string;
-          projectId: string;
-        }>;
-        const result = await ticktick.batchTaskUpdate(token, {
-          delete: tasks.map((t) => ({
-            taskId: t.taskId,
-            projectId: t.projectId,
-          })),
-        });
-        return JSON.stringify(result);
+        await ticktick.deleteTask(
+          token,
+          args.projectId as string,
+          args.taskId as string
+        );
+        return JSON.stringify({ success: true });
       }
 
       case 'flag_task': {
-        invalidateCache();
-        const data = await getCachedData(token);
-        const task = data.syncTaskBean.update.find(
-          (t) => t.id === args.taskId && t.projectId === args.projectId
+        // Get current task to read existing tags
+        const data = await ticktick.getProjectData(
+          token,
+          args.projectId as string
         );
+        const task = data.tasks?.find((t) => t.id === args.taskId);
         const currentTags = task?.tags ?? [];
         if (currentTags.includes('flagged')) {
           return JSON.stringify({ message: 'Task is already flagged' });
         }
-        const result = await ticktick.batchTaskUpdate(token, {
-          update: [
-            {
-              id: args.taskId,
-              projectId: args.projectId,
-              tags: [...currentTags, 'flagged'],
-            },
-          ],
-        });
         invalidateCache();
-        return JSON.stringify(result);
+        const updated = await ticktick.updateTask(
+          token,
+          args.taskId as string,
+          { tags: [...currentTags, 'flagged'], projectId: args.projectId as string }
+        );
+        return JSON.stringify(updated);
       }
 
       case 'unflag_task': {
-        invalidateCache();
-        const data = await getCachedData(token);
-        const task = data.syncTaskBean.update.find(
-          (t) => t.id === args.taskId && t.projectId === args.projectId
+        const data = await ticktick.getProjectData(
+          token,
+          args.projectId as string
         );
+        const task = data.tasks?.find((t) => t.id === args.taskId);
         const currentTags = task?.tags ?? [];
-        const result = await ticktick.batchTaskUpdate(token, {
-          update: [
-            {
-              id: args.taskId,
-              projectId: args.projectId,
-              tags: currentTags.filter((t) => t !== 'flagged'),
-            },
-          ],
-        });
         invalidateCache();
-        return JSON.stringify(result);
+        const updated = await ticktick.updateTask(
+          token,
+          args.taskId as string,
+          {
+            tags: currentTags.filter((t) => t !== 'flagged'),
+            projectId: args.projectId as string,
+          }
+        );
+        return JSON.stringify(updated);
       }
 
       case 'get_flagged_tasks': {
-        const data = await getCachedData(token);
-        const flagged = data.syncTaskBean.update.filter(
-          (t) => t.tags?.includes('flagged') && t.status === 0
-        );
-        return JSON.stringify(
-          flagged.map((t) => ({
-            id: t.id,
-            title: t.title,
-            projectId: t.projectId,
-            priority: t.priority,
-            dueDate: t.dueDate,
-          }))
-        );
+        const projects = await getCachedProjects(token);
+        const allFlagged: Array<Record<string, unknown>> = [];
+        for (const project of projects) {
+          try {
+            const data = await ticktick.getProjectData(token, project.id);
+            const flagged = (data.tasks ?? []).filter(
+              (t) => t.tags?.includes('flagged') && t.status === 0
+            );
+            for (const t of flagged) {
+              allFlagged.push({
+                id: t.id,
+                title: t.title,
+                projectId: t.projectId,
+                projectName: project.name,
+                priority: t.priority,
+                dueDate: t.dueDate,
+              });
+            }
+          } catch {
+            // Skip projects that fail to load
+          }
+        }
+        return JSON.stringify(allFlagged);
       }
 
       default:

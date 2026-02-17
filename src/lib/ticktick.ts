@@ -1,114 +1,174 @@
-import type { BatchCheckResponse, Section } from '../types';
-
 const PROXY_URL = import.meta.env.VITE_PROXY_URL || '';
 
-function deviceHeader(): string {
-  return JSON.stringify({
-    platform: 'web',
-    os: 'macOS',
-    device: 'Chrome',
-    name: '',
-    version: 4576,
-    id: crypto.randomUUID().replace(/-/g, '').slice(0, 24),
-    channel: 'website',
-    campaign: '',
-    websocket: '',
-  });
-}
-
-function headers(token: string): Record<string, string> {
+function authHeaders(token: string): Record<string, string> {
   return {
     'Content-Type': 'application/json',
-    'x-device': deviceHeader(),
-    Cookie: `t=${token}`,
+    Authorization: `Bearer ${token}`,
   };
 }
 
-export async function login(
-  email: string,
-  password: string
-): Promise<{ token: string }> {
-  const res = await fetch(
-    `${PROXY_URL}/api/ticktick/user/signon?wc=true&remember=true`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-device': deviceHeader(),
-      },
-      body: JSON.stringify({ username: email, password }),
-    }
-  );
-  const data = await res.json();
-  if (!res.ok || data.errorCode) {
-    throw new Error(data.errorMessage || data.errorCode || `Login failed: ${res.status}`);
-  }
-  return { token: data.token };
+// --- OAuth ---
+
+export function getAuthorizeUrl(clientId: string, redirectUri: string, state: string): string {
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'tasks:read tasks:write',
+    state,
+  });
+  return `https://ticktick.com/oauth/authorize?${params}`;
 }
 
-export async function getAllData(token: string): Promise<BatchCheckResponse> {
-  const res = await fetch(`${PROXY_URL}/api/ticktick/batch/check/0`, {
-    method: 'GET',
-    headers: headers(token),
+export async function exchangeCodeForToken(
+  code: string,
+  clientId: string,
+  clientSecret: string,
+  redirectUri: string
+): Promise<{ accessToken: string }> {
+  const res = await fetch(`${PROXY_URL}/api/ticktick-oauth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: redirectUri,
+    }),
   });
   if (!res.ok) {
-    throw new Error(`Failed to fetch data: ${res.status}`);
+    const text = await res.text();
+    throw new Error(`Token exchange failed: ${text}`);
   }
+  const data = await res.json();
+  return { accessToken: data.access_token };
+}
+
+// --- Projects ---
+
+export interface Project {
+  id: string;
+  name: string;
+  color?: string;
+  sortOrder?: number;
+  kind?: string;
+}
+
+export async function getProjects(token: string): Promise<Project[]> {
+  const res = await fetch(`${PROXY_URL}/api/ticktick/project`, {
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error(`Failed to fetch projects: ${res.status}`);
   return res.json();
 }
 
-export async function getProjectSections(
+// --- Tasks ---
+
+export interface Task {
+  id: string;
+  projectId: string;
+  title: string;
+  content?: string;
+  status: number; // 0=open, 2=completed
+  priority: number; // 0=none, 1=low, 3=medium, 5=high
+  tags?: string[];
+  dueDate?: string;
+  startDate?: string;
+  isAllDay?: boolean;
+  timeZone?: string;
+}
+
+export interface ProjectData {
+  project: Project;
+  tasks: Task[];
+}
+
+export async function getProjectData(
   token: string,
   projectId: string
-): Promise<Section[]> {
+): Promise<ProjectData> {
   const res = await fetch(
-    `${PROXY_URL}/api/ticktick/column/project/${projectId}`,
+    `${PROXY_URL}/api/ticktick/project/${projectId}/data`,
+    { headers: authHeaders(token) }
+  );
+  if (!res.ok) throw new Error(`Failed to fetch project data: ${res.status}`);
+  return res.json();
+}
+
+export async function createTask(
+  token: string,
+  task: {
+    title: string;
+    projectId: string;
+    content?: string;
+    priority?: number;
+    dueDate?: string;
+    startDate?: string;
+    isAllDay?: boolean;
+    timeZone?: string;
+    tags?: string[];
+  }
+): Promise<Task> {
+  const res = await fetch(`${PROXY_URL}/api/ticktick/task`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(task),
+  });
+  if (!res.ok) throw new Error(`Failed to create task: ${res.status}`);
+  return res.json();
+}
+
+export async function updateTask(
+  token: string,
+  taskId: string,
+  updates: {
+    title?: string;
+    content?: string;
+    priority?: number;
+    dueDate?: string | null;
+    startDate?: string | null;
+    isAllDay?: boolean;
+    timeZone?: string;
+    tags?: string[];
+    projectId?: string;
+  }
+): Promise<Task> {
+  const res = await fetch(`${PROXY_URL}/api/ticktick/task/${taskId}`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error(`Failed to update task: ${res.status}`);
+  return res.json();
+}
+
+export async function deleteTask(
+  token: string,
+  projectId: string,
+  taskId: string
+): Promise<void> {
+  const res = await fetch(
+    `${PROXY_URL}/api/ticktick/task/${projectId}/${taskId}`,
     {
-      method: 'GET',
-      headers: headers(token),
+      method: 'DELETE',
+      headers: authHeaders(token),
     }
   );
-  if (!res.ok) {
-    throw new Error(`Failed to fetch sections: ${res.status}`);
-  }
-  const data = await res.json();
-  return data.columns ?? data ?? [];
+  if (!res.ok) throw new Error(`Failed to delete task: ${res.status}`);
 }
 
-export async function batchTaskUpdate(
+export async function completeTask(
   token: string,
-  payload: {
-    add?: unknown[];
-    update?: unknown[];
-    delete?: unknown[];
-  }
-): Promise<unknown> {
-  const res = await fetch(`${PROXY_URL}/api/ticktick/batch/task`, {
-    method: 'POST',
-    headers: headers(token),
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    throw new Error(`Batch task update failed: ${res.status}`);
-  }
-  return res.json();
-}
-
-export async function moveTaskToProject(
-  token: string,
-  payload: Array<{
-    taskId: string;
-    fromProjectId: string;
-    toProjectId: string;
-  }>
-): Promise<unknown> {
-  const res = await fetch(`${PROXY_URL}/api/ticktick/batch/taskProject`, {
-    method: 'POST',
-    headers: headers(token),
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    throw new Error(`Move task failed: ${res.status}`);
-  }
-  return res.json();
+  projectId: string,
+  taskId: string
+): Promise<void> {
+  const res = await fetch(
+    `${PROXY_URL}/api/ticktick/project/${projectId}/task/${taskId}/complete`,
+    {
+      method: 'POST',
+      headers: authHeaders(token),
+    }
+  );
+  if (!res.ok) throw new Error(`Failed to complete task: ${res.status}`);
 }

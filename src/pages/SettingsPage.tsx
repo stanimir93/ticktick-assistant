@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import type { ProvidersMap, ProviderName, ProviderConfig } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
-import { login } from '@/lib/ticktick';
+import { exchangeCodeForToken } from '@/lib/ticktick';
 import ProviderCard from '@/components/ProviderCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const allProviders: ProviderName[] = ['claude', 'openai', 'gemini', 'grok'];
+
+const REDIRECT_URI = window.location.origin + window.location.pathname;
 
 interface SettingsPageProps {
   onNavigateChat: () => void;
@@ -30,37 +32,83 @@ export default function SettingsPage({ onNavigateChat }: SettingsPageProps) {
     'ticktick-token',
     null
   );
+  const [ticktickClientId, setTicktickClientId] = useLocalStorage<string>(
+    'ticktick-client-id',
+    ''
+  );
+  const [ticktickClientSecret, setTicktickClientSecret] =
+    useLocalStorage<string>('ticktick-client-secret', '');
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [manualToken, setManualToken] = useState('');
-  const [loginMode, setLoginMode] = useState<'login' | 'token'>('login');
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginResult, setLoginResult] = useState<{
+  const [clientIdInput, setClientIdInput] = useState('');
+  const [clientSecretInput, setClientSecretInput] = useState('');
+  const [oauthStatus, setOauthStatus] = useState<{
     ok: boolean;
     message: string;
   } | null>(null);
+  const [exchanging, setExchanging] = useState(false);
 
   const configuredProviders = getConfiguredProviderNames(providers);
+  const hasClientCredentials = !!ticktickClientId && !!ticktickClientSecret;
 
-  const handleTickTickLogin = async () => {
-    if (!email.trim() || !password.trim()) return;
-    setLoginLoading(true);
-    setLoginResult(null);
-    try {
-      const { token } = await login(email, password);
-      setTicktickToken(token);
-      setEmail('');
-      setPassword('');
-      setLoginResult({ ok: true, message: 'Connected to TickTick!' });
-    } catch (err) {
-      setLoginResult({
+  // Handle OAuth callback — check URL for ?code= parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (!code) return;
+
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname + '#/settings');
+
+    const storedClientId = localStorage.getItem('ticktick-client-id');
+    const storedClientSecret = localStorage.getItem('ticktick-client-secret');
+    if (!storedClientId || !storedClientSecret) {
+      setOauthStatus({
         ok: false,
-        message: err instanceof Error ? err.message : 'Login failed',
+        message: 'Client credentials not found. Please save them first.',
       });
-    } finally {
-      setLoginLoading(false);
+      return;
     }
+
+    // Parse stored values (useLocalStorage stores JSON-encoded strings)
+    const clientId = JSON.parse(storedClientId) as string;
+    const clientSecret = JSON.parse(storedClientSecret) as string;
+
+    setExchanging(true);
+    exchangeCodeForToken(code, clientId, clientSecret, REDIRECT_URI)
+      .then(({ accessToken }) => {
+        setTicktickToken(accessToken);
+        setOauthStatus({ ok: true, message: 'Connected to TickTick!' });
+      })
+      .catch((err) => {
+        setOauthStatus({
+          ok: false,
+          message: err instanceof Error ? err.message : 'Token exchange failed',
+        });
+      })
+      .finally(() => setExchanging(false));
+  }, [setTicktickToken]);
+
+  const handleSaveCredentials = () => {
+    const id = clientIdInput.trim();
+    const secret = clientSecretInput.trim();
+    if (!id || !secret) return;
+    setTicktickClientId(id);
+    setTicktickClientSecret(secret);
+    setClientIdInput('');
+    setClientSecretInput('');
+  };
+
+  const handleAuthorize = () => {
+    const state = crypto.randomUUID();
+    sessionStorage.setItem('ticktick-oauth-state', state);
+    const params = new URLSearchParams({
+      client_id: ticktickClientId,
+      redirect_uri: REDIRECT_URI,
+      response_type: 'code',
+      scope: 'tasks:read tasks:write',
+      state,
+    });
+    window.location.href = `https://ticktick.com/oauth/authorize?${params}`;
   };
 
   const handleProviderSave = (name: ProviderName, config: ProviderConfig) => {
@@ -112,92 +160,88 @@ export default function SettingsPage({ onNavigateChat }: SettingsPageProps) {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Button
-                    variant={loginMode === 'login' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setLoginMode('login')}
-                  >
-                    Email & Password
-                  </Button>
-                  <Button
-                    variant={loginMode === 'token' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setLoginMode('token')}
-                  >
-                    Paste Token
-                  </Button>
-                </div>
-
-                {loginMode === 'login' ? (
+                {!hasClientCredentials ? (
                   <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      Create an app at{' '}
+                      <a
+                        href="https://developer.ticktick.com/manage"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-primary"
+                      >
+                        developer.ticktick.com
+                      </a>{' '}
+                      and set the redirect URI to:
+                    </p>
+                    <code className="block rounded bg-muted p-2 text-xs break-all">
+                      {REDIRECT_URI}
+                    </code>
                     <div className="space-y-1.5">
-                      <Label htmlFor="tt-email">Email</Label>
+                      <Label htmlFor="tt-client-id">Client ID</Label>
                       <Input
-                        id="tt-email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your@email.com"
+                        id="tt-client-id"
+                        value={clientIdInput}
+                        onChange={(e) => setClientIdInput(e.target.value)}
+                        placeholder="Your TickTick app Client ID"
                       />
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor="tt-password">Password</Label>
+                      <Label htmlFor="tt-client-secret">Client Secret</Label>
                       <Input
-                        id="tt-password"
+                        id="tt-client-secret"
                         type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
+                        value={clientSecretInput}
+                        onChange={(e) => setClientSecretInput(e.target.value)}
+                        placeholder="Your TickTick app Client Secret"
                       />
                     </div>
                     <Button
-                      onClick={handleTickTickLogin}
+                      onClick={handleSaveCredentials}
                       disabled={
-                        !email.trim() || !password.trim() || loginLoading
+                        !clientIdInput.trim() || !clientSecretInput.trim()
                       }
                     >
-                      {loginLoading ? 'Connecting...' : 'Connect'}
+                      Save Credentials
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="tt-token">Session Token</Label>
-                      <Input
-                        id="tt-token"
-                        type="password"
-                        value={manualToken}
-                        onChange={(e) => setManualToken(e.target.value)}
-                        placeholder="Paste your TickTick session token"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Go to ticktick.com &rarr; DevTools (F12) &rarr; Application &rarr; Cookies &rarr; copy the <code className="rounded bg-muted px-1">t</code> value
-                      </p>
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary">
+                        Client credentials saved
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setTicktickClientId('');
+                          setTicktickClientSecret('');
+                        }}
+                      >
+                        Reset Credentials
+                      </Button>
                     </div>
                     <Button
-                      onClick={() => {
-                        if (manualToken.trim()) {
-                          setTicktickToken(manualToken.trim());
-                          setManualToken('');
-                          setLoginResult({ ok: true, message: 'Token saved!' });
-                        }
-                      }}
-                      disabled={!manualToken.trim()}
+                      onClick={handleAuthorize}
+                      disabled={exchanging}
+                      className="w-full"
                     >
-                      Save Token
+                      {exchanging
+                        ? 'Exchanging token...'
+                        : 'Connect to TickTick'}
                     </Button>
                   </div>
                 )}
               </div>
             )}
-            {loginResult && (
+            {oauthStatus && (
               <p
                 className={`mt-2 text-sm ${
-                  loginResult.ok ? 'text-green-600' : 'text-destructive'
+                  oauthStatus.ok ? 'text-green-600' : 'text-destructive'
                 }`}
               >
-                {loginResult.message}
+                {oauthStatus.message}
               </p>
             )}
           </CardContent>

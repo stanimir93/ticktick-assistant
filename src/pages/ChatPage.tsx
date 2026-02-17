@@ -113,8 +113,7 @@ Always be concise and clear in your responses. When listing tasks, format them i
 Important workflow:
 1. First use list_projects to understand what projects exist
 2. Use get_project_tasks to see tasks in a specific project
-3. Use get_project_sections to understand the sections/columns in a project
-4. Then use update/move/complete/delete tools to make changes as requested
+3. Then use update/complete/delete tools to make changes as requested
 
 Date handling:
 - Current date and time: ${new Date().toISOString()} (${tz})
@@ -128,8 +127,8 @@ Flagging:
 - Use get_flagged_tasks to list all flagged tasks across projects
 
 Destructive actions:
-- delete_task, batch_delete_tasks, and move_task_to_project require user confirmation
-- Always include the task title and project name in the tool call so the confirmation card can display them
+- delete_task requires user confirmation
+- Always include the task title in the tool call so the confirmation card can display it
 - If the user cancels, acknowledge it and do not retry`;
 }
 
