@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Copy, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ToolCallCard from './ToolCallCard';
@@ -133,7 +134,7 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
             {isUser ? (
               <p className="m-0">{message.content}</p>
             ) : (
-              <Markdown>{message.content}</Markdown>
+              <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
             )}
           </div>
         )}
