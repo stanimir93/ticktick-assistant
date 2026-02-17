@@ -31,6 +31,7 @@ export interface ChatMessageData {
 
 interface ChatMessageProps {
   message: ChatMessageData;
+  isThinking?: boolean;
 }
 
 function getConfirmationType(
@@ -61,7 +62,20 @@ function getConfirmationDetails(
   };
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+function ThinkingIndicator() {
+  return (
+    <div className="flex items-center gap-1 py-1">
+      <span className="text-xs text-muted-foreground">Thinking</span>
+      <span className="flex gap-0.5">
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
+        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
+      </span>
+    </div>
+  );
+}
+
+export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
   const isUser = message.role === 'user';
 
   return (
@@ -113,6 +127,8 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             )}
           </div>
         )}
+
+        {isThinking && <ThinkingIndicator />}
       </div>
     </div>
   );
