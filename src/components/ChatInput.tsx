@@ -58,6 +58,7 @@ export default function ChatInput({ onSend, onStop, disabled, loading }: ChatInp
           placeholder={
             loading ? 'Waiting for response...' : 'Type a message...'
           }
+          autoFocus
           rows={1}
           className="min-h-[40px] flex-1 resize-none"
         />
