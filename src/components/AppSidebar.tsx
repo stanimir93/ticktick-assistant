@@ -85,9 +85,14 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleNewChat}>
-                  <MessageSquarePlus className="size-4" />
-                  <span>New Chat</span>
+                <SidebarMenuButton onClick={handleNewChat} className="justify-between">
+                  <span className="flex items-center gap-2">
+                    <MessageSquarePlus className="size-4" />
+                    <span>New Chat</span>
+                  </span>
+                  <kbd className="text-[10px] text-muted-foreground">
+                    {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl+'}J
+                  </kbd>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {conversations?.map((conv) => (
