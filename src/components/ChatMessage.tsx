@@ -57,7 +57,7 @@ function getConfirmationDetails(
   }
 
   return {
-    title: args.title as string | undefined,
+    title: (args.title ?? args.name) as string | undefined,
     projectName: args.projectName as string | undefined,
     fromProjectName: args.fromProjectName as string | undefined,
     toProjectName: args.toProjectName as string | undefined,

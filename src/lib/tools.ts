@@ -2,6 +2,7 @@ import type { ToolDefinition } from './llm/types';
 import * as ticktick from './ticktick';
 
 export const toolDefinitions: ToolDefinition[] = [
+  // --- Project tools ---
   {
     name: 'list_projects',
     description: 'Get all TickTick projects/lists. Returns project names and IDs.',
@@ -25,6 +26,70 @@ export const toolDefinitions: ToolDefinition[] = [
     },
   },
   {
+    name: 'create_project',
+    description: 'Create a new project/list.',
+    parameters: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Project name' },
+        color: { type: 'string', description: 'Color hex code (e.g. "#ff6161")' },
+        viewMode: {
+          type: 'string',
+          description: 'View mode: "list", "kanban", or "timeline"',
+        },
+        kind: {
+          type: 'string',
+          description: '"TASK" for task list, "NOTE" for note list',
+        },
+      },
+      required: ['name'],
+    },
+  },
+  {
+    name: 'update_project',
+    description: 'Update a project — rename, change color, view mode, etc.',
+    parameters: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'The project ID to update' },
+        name: { type: 'string', description: 'New project name' },
+        color: { type: 'string', description: 'New color hex code' },
+        viewMode: {
+          type: 'string',
+          description: 'New view mode: "list", "kanban", or "timeline"',
+        },
+      },
+      required: ['projectId'],
+    },
+  },
+  {
+    name: 'delete_project',
+    description:
+      'Delete a project and all its tasks. This is destructive and cannot be undone — the user will be asked to confirm.',
+    requiresConfirmation: true,
+    parameters: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'The project ID to delete' },
+        name: { type: 'string', description: 'Project name (for confirmation display)' },
+      },
+      required: ['projectId'],
+    },
+  },
+  // --- Task tools ---
+  {
+    name: 'get_task',
+    description: 'Get a single task by project ID and task ID. Returns full task details including subtasks, reminders, and recurrence.',
+    parameters: {
+      type: 'object',
+      properties: {
+        projectId: { type: 'string', description: 'The project ID' },
+        taskId: { type: 'string', description: 'The task ID' },
+      },
+      required: ['projectId', 'taskId'],
+    },
+  },
+  {
     name: 'create_task',
     description: 'Create a new task in a project.',
     parameters: {
@@ -35,7 +100,8 @@ export const toolDefinitions: ToolDefinition[] = [
           description: 'The project ID to create the task in',
         },
         title: { type: 'string', description: 'Task title' },
-        content: { type: 'string', description: 'Task description/notes' },
+        content: { type: 'string', description: 'Task description/notes (plain text)' },
+        desc: { type: 'string', description: 'Task description (rich text/markdown)' },
         priority: {
           type: 'number',
           description: 'Priority: 0=none, 1=low, 3=medium, 5=high',
@@ -61,20 +127,51 @@ export const toolDefinitions: ToolDefinition[] = [
           items: { type: 'string' },
           description: 'Tags to assign to the task',
         },
+        reminders: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Reminder triggers in iCal format (e.g. "TRIGGER:P0DT9H0M0S" for 9am, "TRIGGER:-PT15M" for 15 min before)',
+        },
+        repeatFlag: {
+          type: 'string',
+          description:
+            'Recurrence rule in iCal RRULE format (e.g. "RRULE:FREQ=DAILY;INTERVAL=1", "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR")',
+        },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              title: { type: 'string', description: 'Subtask title' },
+              status: {
+                type: 'number',
+                description: '0=unchecked, 1=checked',
+              },
+            },
+            required: ['title'],
+          },
+          description: 'Subtask/checklist items',
+        },
       },
       required: ['projectId', 'title'],
     },
   },
   {
     name: 'update_task',
-    description: 'Update a task — rename, change description, priority, due date, tags, etc.',
+    description:
+      'Update a task — rename, change description, priority, due date, tags, reminders, recurrence, subtasks, etc.',
     parameters: {
       type: 'object',
       properties: {
         taskId: { type: 'string', description: 'The task ID' },
-        projectId: { type: 'string', description: 'The project ID the task belongs to' },
+        projectId: {
+          type: 'string',
+          description: 'The project ID the task currently belongs to',
+        },
         title: { type: 'string', description: 'New task title' },
-        content: { type: 'string', description: 'New task description' },
+        content: { type: 'string', description: 'New task description (plain text)' },
+        desc: { type: 'string', description: 'New task description (rich text/markdown)' },
         priority: {
           type: 'number',
           description: 'New priority: 0=none, 1=low, 3=medium, 5=high',
@@ -100,6 +197,32 @@ export const toolDefinitions: ToolDefinition[] = [
           items: { type: 'string' },
           description: 'Replace all tags on the task',
         },
+        reminders: {
+          type: 'array',
+          items: { type: 'string' },
+          description:
+            'Replace all reminders (iCal TRIGGER format), or empty array to remove all',
+        },
+        repeatFlag: {
+          type: ['string', 'null'],
+          description: 'Recurrence rule in iCal RRULE format, or null to remove recurrence',
+        },
+        items: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', description: 'Subtask ID (omit for new subtasks)' },
+              title: { type: 'string', description: 'Subtask title' },
+              status: {
+                type: 'number',
+                description: '0=unchecked, 1=checked',
+              },
+            },
+            required: ['title'],
+          },
+          description: 'Replace all subtask/checklist items',
+        },
       },
       required: ['taskId', 'projectId'],
     },
@@ -118,21 +241,46 @@ export const toolDefinitions: ToolDefinition[] = [
   },
   {
     name: 'delete_task',
-    description: 'Delete a task. This is destructive and cannot be undone — the user will be asked to confirm.',
+    description:
+      'Delete a task. This is destructive and cannot be undone — the user will be asked to confirm.',
     requiresConfirmation: true,
     parameters: {
       type: 'object',
       properties: {
         taskId: { type: 'string', description: 'The task ID' },
         projectId: { type: 'string', description: 'The project ID' },
-        title: { type: 'string', description: 'Task title (for confirmation display)' },
+        title: {
+          type: 'string',
+          description: 'Task title (for confirmation display)',
+        },
       },
       required: ['taskId', 'projectId'],
     },
   },
   {
+    name: 'move_task',
+    description: 'Move a task from one project to another.',
+    parameters: {
+      type: 'object',
+      properties: {
+        taskId: { type: 'string', description: 'The task ID to move' },
+        fromProjectId: {
+          type: 'string',
+          description: 'The project ID the task currently belongs to',
+        },
+        toProjectId: {
+          type: 'string',
+          description: 'The target project ID to move the task to',
+        },
+      },
+      required: ['taskId', 'fromProjectId', 'toProjectId'],
+    },
+  },
+  // --- Flag tools ---
+  {
     name: 'flag_task',
-    description: 'Flag a task by adding the "flagged" tag. Flagged tasks can be listed with get_flagged_tasks.',
+    description:
+      'Flag a task by adding the "flagged" tag. Flagged tasks can be listed with get_flagged_tasks.',
     parameters: {
       type: 'object',
       properties: {
@@ -156,7 +304,8 @@ export const toolDefinitions: ToolDefinition[] = [
   },
   {
     name: 'get_flagged_tasks',
-    description: 'Get all tasks across all projects that have the "flagged" tag.',
+    description:
+      'Get all tasks across all projects that have the "flagged" tag.',
     parameters: {
       type: 'object',
       properties: {},
@@ -190,6 +339,8 @@ export async function executeTool(
 ): Promise<string> {
   try {
     switch (name) {
+      // --- Project handlers ---
+
       case 'list_projects': {
         const projects = await getCachedProjects(token);
         return JSON.stringify(
@@ -216,8 +367,54 @@ export async function executeTool(
             priority: t.priority,
             tags: t.tags,
             dueDate: t.dueDate,
+            startDate: t.startDate,
+            reminders: t.reminders,
+            repeatFlag: t.repeatFlag,
+            items: t.items,
           }))
         );
+      }
+
+      case 'create_project': {
+        invalidateCache();
+        const project = await ticktick.createProject(token, {
+          name: args.name as string,
+          color: args.color as string | undefined,
+          viewMode: args.viewMode as string | undefined,
+          kind: args.kind as string | undefined,
+        });
+        return JSON.stringify(project);
+      }
+
+      case 'update_project': {
+        invalidateCache();
+        const updates: Record<string, unknown> = {};
+        if (args.name !== undefined) updates.name = args.name;
+        if (args.color !== undefined) updates.color = args.color;
+        if (args.viewMode !== undefined) updates.viewMode = args.viewMode;
+        const project = await ticktick.updateProject(
+          token,
+          args.projectId as string,
+          updates as Parameters<typeof ticktick.updateProject>[2]
+        );
+        return JSON.stringify(project);
+      }
+
+      case 'delete_project': {
+        invalidateCache();
+        await ticktick.deleteProject(token, args.projectId as string);
+        return JSON.stringify({ success: true });
+      }
+
+      // --- Task handlers ---
+
+      case 'get_task': {
+        const task = await ticktick.getTask(
+          token,
+          args.projectId as string,
+          args.taskId as string
+        );
+        return JSON.stringify(task);
       }
 
       case 'create_task': {
@@ -226,12 +423,16 @@ export async function executeTool(
           title: args.title as string,
           projectId: args.projectId as string,
           content: args.content as string | undefined,
+          desc: args.desc as string | undefined,
           priority: args.priority as number | undefined,
           dueDate: args.dueDate as string | undefined,
           startDate: args.startDate as string | undefined,
           isAllDay: args.isAllDay as boolean | undefined,
           timeZone: args.timeZone as string | undefined,
           tags: args.tags as string[] | undefined,
+          reminders: args.reminders as string[] | undefined,
+          repeatFlag: args.repeatFlag as string | undefined,
+          items: args.items as ticktick.ChecklistItem[] | undefined,
         });
         return JSON.stringify(task);
       }
@@ -243,12 +444,16 @@ export async function executeTool(
         };
         if (args.title !== undefined) updates.title = args.title;
         if (args.content !== undefined) updates.content = args.content;
+        if (args.desc !== undefined) updates.desc = args.desc;
         if (args.priority !== undefined) updates.priority = args.priority;
         if (args.dueDate !== undefined) updates.dueDate = args.dueDate;
         if (args.startDate !== undefined) updates.startDate = args.startDate;
         if (args.isAllDay !== undefined) updates.isAllDay = args.isAllDay;
         if (args.timeZone !== undefined) updates.timeZone = args.timeZone;
         if (args.tags !== undefined) updates.tags = args.tags;
+        if (args.reminders !== undefined) updates.reminders = args.reminders;
+        if (args.repeatFlag !== undefined) updates.repeatFlag = args.repeatFlag;
+        if (args.items !== undefined) updates.items = args.items;
         const task = await ticktick.updateTask(
           token,
           args.taskId as string,
@@ -277,8 +482,19 @@ export async function executeTool(
         return JSON.stringify({ success: true });
       }
 
+      case 'move_task': {
+        invalidateCache();
+        const task = await ticktick.updateTask(
+          token,
+          args.taskId as string,
+          { projectId: args.toProjectId as string }
+        );
+        return JSON.stringify(task);
+      }
+
+      // --- Flag handlers ---
+
       case 'flag_task': {
-        // Get current task to read existing tags
         const data = await ticktick.getProjectData(
           token,
           args.projectId as string
@@ -292,7 +508,10 @@ export async function executeTool(
         const updated = await ticktick.updateTask(
           token,
           args.taskId as string,
-          { tags: [...currentTags, 'flagged'], projectId: args.projectId as string }
+          {
+            tags: [...currentTags, 'flagged'],
+            projectId: args.projectId as string,
+          }
         );
         return JSON.stringify(updated);
       }

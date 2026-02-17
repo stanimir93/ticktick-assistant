@@ -50,7 +50,7 @@ export default function ConfirmationCard({
           ) : (
             <ArrowRightLeft className="size-4 text-blue-600" />
           )}
-          {isDelete ? 'Delete task?' : 'Move task?'}
+          {isDelete ? 'Delete?' : 'Move task?'}
           {isBatch && ` (${details.tasks!.length} tasks)`}
         </CardTitle>
       </CardHeader>
