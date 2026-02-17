@@ -202,6 +202,13 @@ export default function ChatPage() {
           resolve: undefined,
         })),
       }));
+
+      // Mark interrupted assistant messages (empty content from aborted requests)
+      const last = restored[restored.length - 1];
+      if (last?.role === 'assistant' && !last.content) {
+        last.content = '*Response interrupted — send a new message to continue.*';
+      }
+
       dispatch({ type: 'load_messages', messages: restored });
 
       const llmMessages: Message[] = [
