@@ -159,20 +159,86 @@ export default function SettingsPage() {
         <Card>
           <CardContent className="pt-6">
             {ticktickToken ? (
-              <div className="flex items-center justify-between">
-                <Badge
-                  variant="secondary"
-                  className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                >
-                  Connected to TickTick
-                </Badge>
-                <Button
-                  onClick={() => setTicktickToken(null)}
-                  variant="destructive"
-                  size="sm"
-                >
-                  Disconnect
-                </Button>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                  >
+                    Connected to TickTick
+                  </Badge>
+                  <Button
+                    onClick={() => setTicktickToken(null)}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+                {hasClientCredentials && (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label>Client ID</Label>
+                      <div className="flex gap-1">
+                        <Input
+                          type={showClientId ? 'text' : 'password'}
+                          value={ticktickClientId}
+                          readOnly
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => setShowClientId(!showClientId)}
+                          tabIndex={-1}
+                        >
+                          {showClientId ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => handleCopy(ticktickClientId, 'clientId')}
+                          tabIndex={-1}
+                        >
+                          {copiedField === 'clientId' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Client Secret</Label>
+                      <div className="flex gap-1">
+                        <Input
+                          type={showClientSecret ? 'text' : 'password'}
+                          value={ticktickClientSecret}
+                          readOnly
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => setShowClientSecret(!showClientSecret)}
+                          tabIndex={-1}
+                        >
+                          {showClientSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="shrink-0"
+                          onClick={() => handleCopy(ticktickClientSecret, 'clientSecret')}
+                          tabIndex={-1}
+                        >
+                          {copiedField === 'clientSecret' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
