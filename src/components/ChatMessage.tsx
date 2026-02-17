@@ -1,4 +1,6 @@
+import { useState, useCallback } from 'react';
 import Markdown from 'react-markdown';
+import { Copy, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ToolCallCard from './ToolCallCard';
 import ConfirmationCard from './ConfirmationCard';
@@ -77,6 +79,14 @@ function ThinkingIndicator() {
 
 export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
   const isUser = message.role === 'user';
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(message.content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [message.content]);
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
@@ -129,6 +139,27 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
         )}
 
         {isThinking && <ThinkingIndicator />}
+
+        {!isUser && message.content && !isThinking && (
+          <div className="mt-2 flex justify-start">
+            <button
+              onClick={handleCopy}
+              className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {copied ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-green-500" />
+                  <span className="text-green-500">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
