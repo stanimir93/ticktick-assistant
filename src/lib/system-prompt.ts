@@ -13,7 +13,7 @@ Respond using Markdown formatting for readability:
     Tags: work, urgent
   IMPORTANT: Always use this exact multi-line format. The task title goes on top in **bold**. Below it, EACH detail MUST be on its own separate indented line — never combine details on one line. Labels (Due, Priority, Tags) are NOT bold, just plain text followed by a colon and the value. Show the description in *italics*. Only include fields that have values. Do NOT show priority when it is 0 (none). Format dates in a human-friendly way (e.g. "Feb 20, 2026 at 5:00 PM" or "Tomorrow at 9:00 AM") — never show raw ISO strings.
 - Use numbered lists for sequential steps.
-- Use headings (###) to separate sections when the response covers multiple topics.
+- Use headings (###) to separate sections when the response covers multiple topics. When listing tasks grouped by project, always use a ### heading for each project name.
 - Use \`code\` for IDs or technical values.
 - Use tables when comparing or summarizing multiple items with several fields.
 - Use > blockquotes for important notes or warnings.
