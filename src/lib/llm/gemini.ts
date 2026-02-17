@@ -3,6 +3,25 @@ import type { Message, ToolDefinition, ToolCall } from './types';
 
 const PROXY_URL = import.meta.env.VITE_PROXY_URL || '';
 
+/** Convert JSON Schema nullable arrays (type: ['string', 'null']) to Gemini format (type: 'string', nullable: true) */
+function convertSchema(schema: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(schema)) {
+    if (key === 'type' && Array.isArray(value)) {
+      const types = value.filter((t) => t !== 'null');
+      result.type = types.length === 1 ? types[0] : types;
+      if (value.includes('null')) {
+        result.nullable = true;
+      }
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      result[key] = convertSchema(value as Record<string, unknown>);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 export const geminiProvider: LLMProvider = {
   name: 'gemini',
 
@@ -17,7 +36,7 @@ export const geminiProvider: LLMProvider = {
         function_declarations: tools.map((t) => ({
           name: t.name,
           description: t.description,
-          parameters: t.parameters,
+          parameters: convertSchema(t.parameters),
         })),
       },
     ];
