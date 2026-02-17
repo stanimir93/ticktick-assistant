@@ -1,10 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { Eye, EyeOff, Copy, Check } from 'lucide-react';
 import type { ProvidersMap, ProviderName, ProviderConfig } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
 import { type ApiVersion, API_VERSION_KEY, DEFAULT_API_VERSION, V2_USERNAME_KEY, V2_PASSWORD_KEY, V2_SESSION_KEY } from '@/lib/api-version';
-import { exchangeCodeForToken } from '@/lib/ticktick';
 import { signIn as v2SignIn } from '@/lib/ticktick-v2';
 import ProviderCard from '@/components/ProviderCard';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 
 const allProviders: ProviderName[] = ['claude', 'openai', 'gemini', 'grok'];
 
-const REDIRECT_URI = window.location.origin + window.location.pathname;
+const REDIRECT_URI = window.location.origin + import.meta.env.BASE_URL;
 
 export default function SettingsPage() {
   const [providers, setProviders] = useLocalStorage<ProvidersMap>(
@@ -43,11 +42,6 @@ export default function SettingsPage() {
 
   const [clientIdInput, setClientIdInput] = useState('');
   const [clientSecretInput, setClientSecretInput] = useState('');
-  const [oauthStatus, setOauthStatus] = useState<{
-    ok: boolean;
-    message: string;
-  } | null>(null);
-  const [exchanging, setExchanging] = useState(false);
   const [credentialsSaved, setCredentialsSaved] = useState(false);
   const credentialsSavedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [showClientId, setShowClientId] = useState(false);
@@ -75,44 +69,6 @@ export default function SettingsPage() {
 
   const configuredProviders = getConfiguredProviderNames(providers);
   const hasClientCredentials = !!ticktickClientId && !!ticktickClientSecret;
-
-  // Handle OAuth callback — check URL for ?code= parameter
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (!code) return;
-
-    // Clean URL (remove ?code= query param, keep on settings page)
-    window.history.replaceState({}, '', window.location.pathname);
-
-    const storedClientId = localStorage.getItem('ticktick-client-id');
-    const storedClientSecret = localStorage.getItem('ticktick-client-secret');
-    if (!storedClientId || !storedClientSecret) {
-      setOauthStatus({
-        ok: false,
-        message: 'Client credentials not found. Please save them first.',
-      });
-      return;
-    }
-
-    // Parse stored values (useLocalStorage stores JSON-encoded strings)
-    const clientId = JSON.parse(storedClientId) as string;
-    const clientSecret = JSON.parse(storedClientSecret) as string;
-
-    setExchanging(true);
-    exchangeCodeForToken(code, clientId, clientSecret, REDIRECT_URI)
-      .then(({ accessToken }) => {
-        setTicktickToken(accessToken);
-        setOauthStatus({ ok: true, message: 'Connected to TickTick!' });
-      })
-      .catch((err) => {
-        setOauthStatus({
-          ok: false,
-          message: err instanceof Error ? err.message : 'Token exchange failed',
-        });
-      })
-      .finally(() => setExchanging(false));
-  }, [setTicktickToken]);
 
   const handleSaveCredentials = () => {
     const id = clientIdInput.trim();
@@ -331,25 +287,13 @@ export default function SettingsPage() {
                     </div>
                     <Button
                       onClick={handleAuthorize}
-                      disabled={exchanging}
                       className="w-full"
                     >
-                      {exchanging
-                        ? 'Exchanging token...'
-                        : 'Connect to TickTick'}
+                      Connect to TickTick
                     </Button>
                   </div>
                 )}
               </div>
-            )}
-            {oauthStatus && (
-              <p
-                className={`mt-2 text-sm ${
-                  oauthStatus.ok ? 'text-green-600 dark:text-green-400' : 'text-destructive'
-                }`}
-              >
-                {oauthStatus.message}
-              </p>
             )}
           </CardContent>
         </Card>
