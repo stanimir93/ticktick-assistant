@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import { Eye, EyeOff, Copy, Check } from 'lucide-react';
 import type { ProvidersMap, ProviderName, ProviderConfig } from '@/lib/storage';
@@ -169,7 +170,9 @@ export default function SettingsPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href={import.meta.env.BASE_URL}>Chats</BreadcrumbLink>
+              <BreadcrumbLink asChild>
+                <Link to="/">Chats</Link>
+              </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
