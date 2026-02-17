@@ -6,6 +6,7 @@ import { getProvider } from '@/lib/llm';
 import type { Message } from '@/lib/llm/types';
 import { toolDefinitions } from '@/lib/tools';
 import { runToolLoop } from '@/lib/tool-loop';
+import { db, type Conversation, type StoredMessage } from '@/lib/db';
 import ChatMessage from '@/components/ChatMessage';
 import type {
   ChatMessageData,
@@ -13,6 +14,7 @@ import type {
   ConfirmationDisplay,
 } from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
+import ConversationList from '@/components/ConversationList';
 import ProviderSwitcher from '@/components/ProviderSwitcher';
 import { Button } from '@/components/ui/button';
 
@@ -40,7 +42,8 @@ type ChatAction =
       messageId: string;
       confirmationId: string;
       status: 'confirmed' | 'cancelled';
-    };
+    }
+  | { type: 'load_messages'; messages: ChatMessageData[] };
 
 function chatReducer(
   state: ChatMessageData[],
@@ -97,6 +100,8 @@ function chatReducer(
             }
           : m
       );
+    case 'load_messages':
+      return action.messages;
     default:
       return state;
   }
@@ -132,9 +137,32 @@ Destructive actions:
 - If the user cancels, acknowledge it and do not retry`;
 }
 
+/** Strip the non-serializable `resolve` function before persisting */
+function toStoredMessages(messages: ChatMessageData[]): StoredMessage[] {
+  return messages.map((m) => ({
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    provider: m.provider,
+    model: m.model,
+    toolCalls: m.toolCalls,
+    confirmations: m.confirmations?.map(({ resolve: _, ...rest }) => rest),
+  }));
+}
+
+/** Derive a conversation title from the first user message */
+function deriveTitle(messages: ChatMessageData[]): string {
+  const firstUser = messages.find((m) => m.role === 'user');
+  if (!firstUser) return 'New conversation';
+  const text = firstUser.content.slice(0, 60);
+  return text.length < firstUser.content.length ? text + '...' : text;
+}
+
 export default function ChatPage({ onNavigateSettings }: ChatPageProps) {
   const [messages, dispatch] = useReducer(chatReducer, []);
   const [loading, setLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [providers] = useLocalStorage<ProvidersMap>('llm-providers', {});
@@ -159,9 +187,92 @@ export default function ChatPage({ onNavigateSettings }: ChatPageProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Persist messages to IndexedDB whenever they change
+  useEffect(() => {
+    if (!conversationId || messages.length === 0) return;
+
+    const now = Date.now();
+    db.conversations
+      .update(conversationId, {
+        messages: toStoredMessages(messages),
+        title: deriveTitle(messages),
+        updatedAt: now,
+      })
+      .catch(() => {
+        // If the record doesn't exist yet (race), create it
+        db.conversations.put({
+          id: conversationId,
+          title: deriveTitle(messages),
+          messages: toStoredMessages(messages),
+          createdAt: now,
+          updatedAt: now,
+        });
+      });
+  }, [messages, conversationId]);
+
+  const startNewChat = useCallback(() => {
+    setConversationId(null);
+    dispatch({ type: 'load_messages', messages: [] });
+    conversationRef.current = [
+      { role: 'system', content: buildSystemPrompt() },
+    ];
+  }, []);
+
+  const deleteConversation = useCallback(
+    async (id: string) => {
+      await db.conversations.delete(id);
+      if (id === conversationId) {
+        startNewChat();
+      }
+    },
+    [conversationId, startNewChat]
+  );
+
+  const loadConversation = useCallback((conv: Conversation) => {
+    setConversationId(conv.id);
+    // Restore messages — confirmations are loaded without resolve (they are already resolved)
+    const restored: ChatMessageData[] = conv.messages.map((m) => ({
+      ...m,
+      confirmations: m.confirmations?.map((c) => ({
+        ...c,
+        resolve: undefined,
+      })),
+    }));
+    dispatch({ type: 'load_messages', messages: restored });
+
+    // Rebuild the LLM conversation history from stored messages
+    const llmMessages: Message[] = [
+      { role: 'system', content: buildSystemPrompt() },
+    ];
+    for (const m of conv.messages) {
+      if (m.role === 'user') {
+        llmMessages.push({ role: 'user', content: m.content });
+      } else if (m.role === 'assistant' && m.content) {
+        llmMessages.push({ role: 'assistant', content: m.content });
+      }
+    }
+    conversationRef.current = llmMessages;
+    setSidebarOpen(false);
+  }, []);
+
   const handleSend = useCallback(
     async (text: string) => {
       if (!isReady || !activeProvider) return;
+
+      // Auto-create conversation if none active
+      let currentConvId = conversationId;
+      if (!currentConvId) {
+        currentConvId = crypto.randomUUID();
+        setConversationId(currentConvId);
+        const now = Date.now();
+        await db.conversations.put({
+          id: currentConvId,
+          title: 'New conversation',
+          messages: [],
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
 
       const providerName = activeProvider as ProviderName;
       const providerConfig = providers[providerName];
@@ -267,56 +378,105 @@ export default function ChatPage({ onNavigateSettings }: ChatPageProps) {
         setLoading(false);
       }
     },
-    [isReady, activeProvider, providers, ticktickToken]
+    [isReady, activeProvider, providers, ticktickToken, conversationId]
   );
 
   return (
-    <div className="flex h-screen flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b bg-background px-4 py-3">
-        <h1 className="text-lg font-semibold">TickTick Assistant</h1>
-        <div className="flex items-center gap-3">
-          <ProviderSwitcher
-            providers={providers}
-            activeProvider={activeProvider}
-            onSwitch={setActiveProvider}
-          />
-          <Button onClick={onNavigateSettings} variant="outline" size="sm">
-            Settings
-          </Button>
-        </div>
-      </header>
+    <div className="flex h-screen">
+      {/* Sidebar */}
+      {sidebarOpen && (
+        <ConversationList
+          activeId={conversationId}
+          onSelect={loadConversation}
+          onNewChat={() => {
+            startNewChat();
+            setSidebarOpen(false);
+          }}
+          onDelete={deleteConversation}
+        />
+      )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl space-y-4 p-4">
-          {!isReady && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              {!ticktickToken && (
-                <p>Connect your TickTick account in Settings.</p>
-              )}
-              {configuredProviders.length === 0 && (
-                <p>Configure at least one LLM provider in Settings.</p>
-              )}
-              <Button
-                onClick={onNavigateSettings}
-                size="sm"
-                className="mt-2"
+      {/* Main chat area */}
+      <div className="flex flex-1 flex-col">
+        {/* Header */}
+        <header className="flex items-center justify-between border-b bg-background px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              variant="ghost"
+              size="sm"
+              title="Toggle history"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                Go to Settings
-              </Button>
-            </div>
-          )}
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </Button>
+            <h1 className="text-lg font-semibold">TickTick Assistant</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <ProviderSwitcher
+              providers={providers}
+              activeProvider={activeProvider}
+              onSwitch={setActiveProvider}
+            />
+            <Button onClick={onNavigateSettings} variant="outline" size="sm">
+              Settings
+            </Button>
+          </div>
+        </header>
 
-          {messages.map((msg) => (
-            <ChatMessage key={msg.id} message={msg} />
-          ))}
-          <div ref={messagesEndRef} />
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-3xl space-y-4 p-4">
+            {!isReady && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                {!ticktickToken && (
+                  <p>Connect your TickTick account in Settings.</p>
+                )}
+                {configuredProviders.length === 0 && (
+                  <p>Configure at least one LLM provider in Settings.</p>
+                )}
+                <Button
+                  onClick={onNavigateSettings}
+                  size="sm"
+                  className="mt-2"
+                >
+                  Go to Settings
+                </Button>
+              </div>
+            )}
+
+            {messages.length === 0 && isReady && (
+              <div className="py-12 text-center text-muted-foreground">
+                <p className="text-lg">Start a new conversation</p>
+                <p className="mt-1 text-sm">
+                  Ask me to manage your TickTick tasks
+                </p>
+              </div>
+            )}
+
+            {messages.map((msg) => (
+              <ChatMessage key={msg.id} message={msg} />
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
-      </div>
 
-      {/* Input */}
-      <ChatInput onSend={handleSend} disabled={loading || !isReady} />
+        {/* Input */}
+        <ChatInput onSend={handleSend} disabled={loading || !isReady} />
+      </div>
     </div>
   );
 }
