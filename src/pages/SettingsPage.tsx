@@ -33,6 +33,8 @@ export default function SettingsPage({ onNavigateChat }: SettingsPageProps) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [manualToken, setManualToken] = useState('');
+  const [loginMode, setLoginMode] = useState<'login' | 'token'>('login');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginResult, setLoginResult] = useState<{
     ok: boolean;
@@ -109,35 +111,84 @@ export default function SettingsPage({ onNavigateChat }: SettingsPageProps) {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="tt-email">Email</Label>
-                  <Input
-                    id="tt-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                  />
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Button
+                    variant={loginMode === 'login' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setLoginMode('login')}
+                  >
+                    Email & Password
+                  </Button>
+                  <Button
+                    variant={loginMode === 'token' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setLoginMode('token')}
+                  >
+                    Paste Token
+                  </Button>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="tt-password">Password</Label>
-                  <Input
-                    id="tt-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                  />
-                </div>
-                <Button
-                  onClick={handleTickTickLogin}
-                  disabled={
-                    !email.trim() || !password.trim() || loginLoading
-                  }
-                >
-                  {loginLoading ? 'Connecting...' : 'Connect'}
-                </Button>
+
+                {loginMode === 'login' ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="tt-email">Email</Label>
+                      <Input
+                        id="tt-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="your@email.com"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="tt-password">Password</Label>
+                      <Input
+                        id="tt-password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                    <Button
+                      onClick={handleTickTickLogin}
+                      disabled={
+                        !email.trim() || !password.trim() || loginLoading
+                      }
+                    >
+                      {loginLoading ? 'Connecting...' : 'Connect'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="tt-token">Session Token</Label>
+                      <Input
+                        id="tt-token"
+                        type="password"
+                        value={manualToken}
+                        onChange={(e) => setManualToken(e.target.value)}
+                        placeholder="Paste your TickTick session token"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Go to ticktick.com &rarr; DevTools (F12) &rarr; Application &rarr; Cookies &rarr; copy the <code className="rounded bg-muted px-1">t</code> value
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        if (manualToken.trim()) {
+                          setTicktickToken(manualToken.trim());
+                          setManualToken('');
+                          setLoginResult({ ok: true, message: 'Token saved!' });
+                        }
+                      }}
+                      disabled={!manualToken.trim()}
+                    >
+                      Save Token
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
             {loginResult && (
