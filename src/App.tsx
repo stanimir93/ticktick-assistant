@@ -1,11 +1,35 @@
 import { useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
 import { useLocalStorage } from '@uidotdev/usehooks';
+import { ErrorBoundary } from 'react-error-boundary';
 import { exchangeCodeForToken } from '@/lib/ticktick';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
+import ErrorFallback from '@/components/ErrorFallback';
 import ChatPage from '@/pages/ChatPage';
 import SettingsPage from '@/pages/SettingsPage';
+
+function ChatPageBoundary() {
+  const { conversationId } = useParams<{ conversationId: string }>();
+  return (
+    <ErrorBoundary
+      FallbackComponent={(props) => <ErrorFallback {...props} context="chat" />}
+      resetKeys={[conversationId]}
+    >
+      <ChatPage />
+    </ErrorBoundary>
+  );
+}
+
+function SettingsPageBoundary() {
+  return (
+    <ErrorBoundary
+      FallbackComponent={(props) => <ErrorFallback {...props} context="settings" />}
+    >
+      <SettingsPage />
+    </ErrorBoundary>
+  );
+}
 
 const REDIRECT_URI = window.location.origin + import.meta.env.BASE_URL;
 
@@ -63,15 +87,23 @@ export default function App() {
   }, [navigate]);
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <Routes>
-          <Route path="/" element={<ChatPage />} />
-          <Route path="/chat/:conversationId" element={<ChatPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
-      </SidebarInset>
-    </SidebarProvider>
+    <ErrorBoundary
+      FallbackComponent={(props) => <ErrorFallback {...props} context="app" />}
+    >
+      <SidebarProvider>
+        <ErrorBoundary
+          FallbackComponent={(props) => <ErrorFallback {...props} context="sidebar" />}
+        >
+          <AppSidebar />
+        </ErrorBoundary>
+        <SidebarInset>
+          <Routes>
+            <Route path="/" element={<ChatPageBoundary />} />
+            <Route path="/chat/:conversationId" element={<ChatPageBoundary />} />
+            <Route path="/settings" element={<SettingsPageBoundary />} />
+          </Routes>
+        </SidebarInset>
+      </SidebarProvider>
+    </ErrorBoundary>
   );
 }

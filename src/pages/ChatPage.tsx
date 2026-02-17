@@ -11,6 +11,8 @@ import { runToolLoop } from '@/lib/tool-loop';
 import { buildSystemPrompt } from '@/lib/system-prompt';
 import { Badge } from '@/components/ui/badge';
 import { db, type StoredMessage } from '@/lib/db';
+import { ErrorBoundary } from 'react-error-boundary';
+import ErrorFallback from '@/components/ErrorFallback';
 import ChatMessage from '@/components/ChatMessage';
 import type {
   ChatMessageData,
@@ -438,16 +440,20 @@ export default function ChatPage() {
           )}
 
           {messages.map((msg, i) => (
-            <ChatMessage
+            <ErrorBoundary
               key={msg.id}
-              message={msg}
-              isThinking={
-                loading &&
-                msg.role === 'assistant' &&
-                i === messages.length - 1 &&
-                !msg.content
-              }
-            />
+              FallbackComponent={(props) => <ErrorFallback {...props} context="message" />}
+            >
+              <ChatMessage
+                message={msg}
+                isThinking={
+                  loading &&
+                  msg.role === 'assistant' &&
+                  i === messages.length - 1 &&
+                  !msg.content
+                }
+              />
+            </ErrorBoundary>
           ))}
           <div ref={messagesEndRef} />
         </div>
