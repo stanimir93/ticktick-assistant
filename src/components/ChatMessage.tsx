@@ -143,6 +143,11 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
               <Markdown
                 remarkPlugins={[remarkGfm]}
                 components={{
+                  li: ({ children, ...props }) => (
+                    <li {...props} className="mb-3 pb-3 border-b border-border/40 last:border-0 last:mb-0 last:pb-0">
+                      {children}
+                    </li>
+                  ),
                   a: ({ children, href, ...props }) => {
                     if (
                       !href ||
