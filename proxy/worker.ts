@@ -25,7 +25,9 @@ function getCorsHeaders(origin: string | null, env: Env): Record<string, string>
   return {
     'Access-Control-Allow-Origin': effectiveOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-api-key, x-goog-api-key, anthropic-version, anthropic-dangerous-direct-browser-access, X-Ticktick-Session, X-Device',
+    'Access-Control-Max-Age': '86400',
+    'Vary': 'Origin',
   };
 }
 
@@ -34,6 +36,7 @@ const STRIP_HEADERS = new Set([
   'host',
   'origin',
   'referer',
+  'cookie',
   'cf-connecting-ip',
   'cf-ipcountry',
   'cf-ray',
@@ -74,9 +77,9 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Block requests from disallowed origins
+    // Block requests from disallowed or missing origins
     const allowed = getAllowedOrigins(env);
-    if (origin && !allowed.has(origin)) {
+    if (!origin || !allowed.has(origin)) {
       return new Response('Forbidden', { status: 403, headers: corsHeaders });
     }
 
@@ -133,6 +136,7 @@ export default {
     }
 
     const newResponse = new Response(response.body, response);
+    newResponse.headers.delete('Set-Cookie');
     for (const [key, value] of Object.entries(corsHeaders)) {
       newResponse.headers.set(key, value);
     }

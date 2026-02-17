@@ -19,6 +19,17 @@ export default function App() {
     const code = params.get('code');
     if (!code) return;
 
+    // Validate OAuth state to prevent CSRF
+    const state = params.get('state');
+    const expectedState = sessionStorage.getItem('ticktick-oauth-state');
+    if (!state || state !== expectedState) {
+      console.error('OAuth state mismatch — possible CSRF attack');
+      window.history.replaceState({}, '', window.location.pathname);
+      navigate('/settings');
+      return;
+    }
+    sessionStorage.removeItem('ticktick-oauth-state');
+
     // Clean URL
     window.history.replaceState({}, '', window.location.pathname);
 

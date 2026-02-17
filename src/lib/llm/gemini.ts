@@ -63,8 +63,8 @@ export const geminiProvider: LLMProvider = {
     });
 
     return {
-      url: `${PROXY_URL}/api/llm/gemini/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      headers: { 'Content-Type': 'application/json' },
+      url: `${PROXY_URL}/api/llm/gemini/v1beta/models/${model}:generateContent`,
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
       body: {
         contents,
         tools: this.formatTools(tools),

@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 .mcp.json
 .env
+.env.*
+.dev.vars
+*.pem
+*.key
