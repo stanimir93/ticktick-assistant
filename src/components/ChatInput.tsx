@@ -46,7 +46,7 @@ export default function ChatInput({ onSend, onStop, disabled, loading }: ChatInp
   };
 
   return (
-    <div className="border-t bg-background p-4">
+    <div className="sticky bottom-0 z-10 border-t bg-background p-4">
       <div className="mx-auto flex max-w-3xl gap-2">
         <Textarea
           ref={textareaRef}
