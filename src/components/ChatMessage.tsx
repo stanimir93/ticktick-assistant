@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Copy, Check } from 'lucide-react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { Copy, Check, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import ErrorFallback from './ErrorFallback';
 import ToolCallCard from './ToolCallCard';
 import ConfirmationCard from './ConfirmationCard';
 import type { ConfirmationDetails } from './ConfirmationCard';
@@ -108,12 +110,16 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
         )}
 
         {message.toolCalls?.map((tc) => (
-          <ToolCallCard
+          <ErrorBoundary
             key={tc.id}
-            name={tc.name}
-            args={tc.args}
-            result={tc.result}
-          />
+            FallbackComponent={(props) => <ErrorFallback {...props} context="tool call" />}
+          >
+            <ToolCallCard
+              name={tc.name}
+              args={tc.args}
+              result={tc.result}
+            />
+          </ErrorBoundary>
         ))}
 
         {message.confirmations?.map((conf) => (
@@ -147,9 +153,20 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
                     ) {
                       return <span>{children}</span>;
                     }
+                    const isTickTick = href.includes('ticktick.com/webapp');
                     return (
-                      <a {...props} href={href} target="_blank" rel="noopener noreferrer">
-                        {children}
+                      <a
+                        {...props}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-600 no-underline inline-flex items-center align-baseline"
+                      >
+                        {isTickTick ? (
+                          <ExternalLink className="inline h-3.5 w-3.5" />
+                        ) : (
+                          children
+                        )}
                       </a>
                     );
                   },
