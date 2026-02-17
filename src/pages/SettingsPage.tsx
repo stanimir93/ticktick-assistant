@@ -54,8 +54,8 @@ export default function SettingsPage() {
     const code = params.get('code');
     if (!code) return;
 
-    // Clean URL
-    window.history.replaceState({}, '', window.location.pathname + '#/settings');
+    // Clean URL (remove ?code= query param, keep on settings page)
+    window.history.replaceState({}, '', window.location.pathname);
 
     const storedClientId = localStorage.getItem('ticktick-client-id');
     const storedClientSecret = localStorage.getItem('ticktick-client-secret');

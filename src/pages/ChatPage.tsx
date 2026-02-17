@@ -1,4 +1,5 @@
 import { useState, useReducer, useRef, useEffect, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import type { ProvidersMap, ProviderName } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
@@ -155,17 +156,15 @@ function deriveTitle(messages: ChatMessageData[]): string {
   return text.length < firstUser.content.length ? text + '...' : text;
 }
 
-interface ChatPageProps {
-  conversationId: string | null;
-}
-
-export default function ChatPage({ conversationId }: ChatPageProps) {
+export default function ChatPage() {
+  const { conversationId } = useParams<{ conversationId: string }>();
+  const navigate = useNavigate();
   const [messages, dispatch] = useReducer(chatReducer, []);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Track which conversation is currently active (ref avoids re-renders)
-  const activeIdRef = useRef<string | null>(null);
+  const activeIdRef = useRef<string | undefined>(undefined);
 
   const [providers, setProviders] = useLocalStorage<ProvidersMap>('llm-providers', {});
   const [activeProvider, setActiveProvider] = useLocalStorage<string | null>(
@@ -279,7 +278,7 @@ export default function ChatPage({ conversationId }: ChatPageProps) {
           updatedAt: now,
         });
         // Update URL to reflect the new conversation
-        window.location.hash = `#/chat/${currentConvId}`;
+        navigate(`/chat/${currentConvId}`, { replace: true });
       }
 
       const providerName = activeProvider as ProviderName;
@@ -386,7 +385,7 @@ export default function ChatPage({ conversationId }: ChatPageProps) {
         setLoading(false);
       }
     },
-    [isReady, activeProvider, providers, ticktickToken]
+    [isReady, activeProvider, providers, ticktickToken, navigate]
   );
 
   return (
@@ -417,12 +416,12 @@ export default function ChatPage({ conversationId }: ChatPageProps) {
               {configuredProviders.length === 0 && (
                 <p>Configure at least one LLM provider in Settings.</p>
               )}
-              <a
-                href="#/settings"
+              <button
+                onClick={() => navigate('/settings')}
                 className="mt-2 inline-flex h-8 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
               >
                 Go to Settings
-              </a>
+              </button>
             </div>
           )}
 

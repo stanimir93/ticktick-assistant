@@ -1,3 +1,4 @@
+import { useMatch, useNavigate, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type Conversation } from '@/lib/db';
 import {
@@ -23,23 +24,22 @@ import {
   MessageSquare,
 } from 'lucide-react';
 
-interface AppSidebarProps {
-  activeConversationId: string | null;
-}
-
-export function AppSidebar({ activeConversationId }: AppSidebarProps) {
+export function AppSidebar() {
+  const chatMatch = useMatch('/chat/:conversationId');
+  const activeConversationId = chatMatch?.params.conversationId;
+  const navigate = useNavigate();
   const { isMobile, setOpenMobile } = useSidebar();
   const conversations = useLiveQuery(() =>
     db.conversations.orderBy('updatedAt').reverse().toArray()
   );
 
   const handleSelect = (conv: Conversation) => {
-    window.location.hash = `#/chat/${conv.id}`;
+    navigate(`/chat/${conv.id}`);
     if (isMobile) setOpenMobile(false);
   };
 
   const handleNewChat = () => {
-    window.location.hash = '#/';
+    navigate('/');
     if (isMobile) setOpenMobile(false);
   };
 
@@ -47,13 +47,13 @@ export function AppSidebar({ activeConversationId }: AppSidebarProps) {
     e.stopPropagation();
     await db.conversations.delete(id);
     if (id === activeConversationId) {
-      window.location.hash = '#/';
+      navigate('/');
     }
   };
 
   const handleClearAll = async () => {
     await db.conversations.clear();
-    window.location.hash = '#/';
+    navigate('/');
     if (isMobile) setOpenMobile(false);
   };
 
@@ -136,10 +136,10 @@ export function AppSidebar({ activeConversationId }: AppSidebarProps) {
           )}
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <a href="#/settings">
+              <Link to="/settings">
                 <Settings className="size-4" />
                 <span>Settings</span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
