@@ -96,7 +96,7 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
       <div
         className={
           isUser
-            ? 'max-w-[80%] rounded-2xl px-4 py-2.5 bg-primary text-primary-foreground dark:bg-zinc-700 dark:text-zinc-100'
+            ? 'max-w-[80%] rounded-2xl px-4 py-2.5 bg-zinc-100 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100'
             : 'w-full text-foreground'
         }
       >
@@ -135,7 +135,7 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
 
         {message.content && (
           <div
-            className={`prose prose-sm max-w-none ${isUser ? 'prose-invert' : 'dark:prose-invert'}`}
+            className="prose prose-sm max-w-none dark:prose-invert"
           >
             {isUser ? (
               <p className="m-0">{message.content}</p>
@@ -204,16 +204,12 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
           <div className={`mt-2 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
             <button
               onClick={handleCopy}
-              className={`flex items-center gap-1 text-xs transition-colors ${
-                isUser
-                  ? 'text-primary-foreground/60 hover:text-primary-foreground dark:text-zinc-400 dark:hover:text-zinc-100'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              className="flex items-center gap-1 text-xs transition-colors text-muted-foreground hover:text-foreground"
             >
               {copied ? (
                 <>
-                  <Check className={`h-3.5 w-3.5 ${isUser ? 'text-green-300 dark:text-green-400' : 'text-green-500'}`} />
-                  <span className={isUser ? 'text-green-300 dark:text-green-400' : 'text-green-500'}>Copied!</span>
+                  <Check className="h-3.5 w-3.5 text-green-500 dark:text-green-400" />
+                  <span className="text-green-500 dark:text-green-400">Copied!</span>
                 </>
               ) : (
                 <>
