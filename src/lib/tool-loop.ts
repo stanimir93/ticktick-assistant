@@ -21,12 +21,17 @@ export async function runToolLoop(
   model: string,
   apiKey: string,
   ticktickToken: string,
-  callbacks?: ToolLoopCallbacks
+  callbacks?: ToolLoopCallbacks,
+  signal?: AbortSignal
 ): Promise<{ text: string; messages: Message[] }> {
   const conversationMessages = [...messages];
   const maxIterations = 10;
 
   for (let i = 0; i < maxIterations; i++) {
+    if (signal?.aborted) {
+      return { text: 'Request stopped.', messages: conversationMessages };
+    }
+
     const request = provider.buildRequest(
       conversationMessages,
       tools,
@@ -38,6 +43,7 @@ export async function runToolLoop(
       method: 'POST',
       headers: request.headers,
       body: JSON.stringify(request.body),
+      signal,
     });
 
     if (!response.ok) {

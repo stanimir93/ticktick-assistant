@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import type { ProvidersMap, ProviderName, ProviderConfig } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import ThemeToggle from '@/components/ThemeToggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 
@@ -44,6 +45,8 @@ export default function SettingsPage() {
     message: string;
   } | null>(null);
   const [exchanging, setExchanging] = useState(false);
+  const [credentialsSaved, setCredentialsSaved] = useState(false);
+  const credentialsSavedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const configuredProviders = getConfiguredProviderNames(providers);
   const hasClientCredentials = !!ticktickClientId && !!ticktickClientSecret;
@@ -94,6 +97,9 @@ export default function SettingsPage() {
     setTicktickClientSecret(secret);
     setClientIdInput('');
     setClientSecretInput('');
+    setCredentialsSaved(true);
+    clearTimeout(credentialsSavedTimerRef.current);
+    credentialsSavedTimerRef.current = setTimeout(() => setCredentialsSaved(false), 1500);
   };
 
   const handleAuthorize = () => {
@@ -134,6 +140,9 @@ export default function SettingsPage() {
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <h1 className="text-sm font-semibold">Settings</h1>
+        <div className="ml-auto">
+          <ThemeToggle />
+        </div>
       </header>
       <div className="mx-auto w-full max-w-2xl flex-1 overflow-y-auto p-6">
 
@@ -199,10 +208,10 @@ export default function SettingsPage() {
                     <Button
                       onClick={handleSaveCredentials}
                       disabled={
-                        !clientIdInput.trim() || !clientSecretInput.trim()
+                        !clientIdInput.trim() || !clientSecretInput.trim() || credentialsSaved
                       }
                     >
-                      Save Credentials
+                      {credentialsSaved ? 'Saved!' : 'Save Credentials'}
                     </Button>
                   </div>
                 ) : (

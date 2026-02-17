@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { ProviderName, ProviderConfig } from '@/lib/storage';
 import { getProvider } from '@/lib/llm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +38,8 @@ export default function ProviderCard({
   const [apiKey, setApiKey] = useState(config?.apiKey ?? '');
   const [model, setModel] = useState(config?.model ?? provider.models.default);
   const [testing, setTesting] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [testResult, setTestResult] = useState<{
     ok: boolean;
     message: string;
@@ -49,6 +51,9 @@ export default function ProviderCard({
     if (!apiKey.trim()) return;
     onSave({ apiKey: apiKey.trim(), model });
     setTestResult(null);
+    setSaved(true);
+    clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setSaved(false), 1500);
   };
 
   const handleTest = async () => {
@@ -127,8 +132,8 @@ export default function ProviderCard({
         </div>
 
         <div className="flex gap-2">
-          <Button onClick={handleSave} disabled={!apiKey.trim()} size="sm">
-            Save
+          <Button onClick={handleSave} disabled={!apiKey.trim() || saved} size="sm">
+            {saved ? 'Saved!' : 'Save'}
           </Button>
           <Button
             onClick={handleTest}

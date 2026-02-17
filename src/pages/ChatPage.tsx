@@ -16,6 +16,7 @@ import type {
 } from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
 import ProviderSwitcher from '@/components/ProviderSwitcher';
+import ThemeToggle from '@/components/ThemeToggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
 
@@ -179,6 +180,7 @@ export default function ChatPage() {
   const conversationRef = useRef<Message[]>([
     { role: 'system', content: buildSystemPrompt() },
   ]);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleModelChange = useCallback(
     (model: string) => {
@@ -308,6 +310,8 @@ export default function ChatPage() {
       });
 
       setLoading(true);
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
 
       try {
         const { text: responseText, messages: updatedMessages } =
@@ -363,7 +367,8 @@ export default function ChatPage() {
                   });
                 });
               },
-            }
+            },
+            abortController.signal
           );
 
         conversationRef.current = updatedMessages;
@@ -374,14 +379,23 @@ export default function ChatPage() {
           updates: { content: responseText },
         });
       } catch (err) {
-        dispatch({
-          type: 'update_message',
-          id: assistantMsgId,
-          updates: {
-            content: `Error: ${err instanceof Error ? err.message : 'Something went wrong'}`,
-          },
-        });
+        if (abortController.signal.aborted) {
+          dispatch({
+            type: 'update_message',
+            id: assistantMsgId,
+            updates: { content: 'Request stopped.' },
+          });
+        } else {
+          dispatch({
+            type: 'update_message',
+            id: assistantMsgId,
+            updates: {
+              content: `Error: ${err instanceof Error ? err.message : 'Something went wrong'}`,
+            },
+          });
+        }
       } finally {
+        abortControllerRef.current = null;
         setLoading(false);
       }
     },
@@ -395,13 +409,14 @@ export default function ChatPage() {
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <h1 className="text-sm font-semibold">TickTick Assistant</h1>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           <ProviderSwitcher
             providers={providers}
             activeProvider={activeProvider}
             onSwitch={setActiveProvider}
             onModelChange={handleModelChange}
           />
+          <ThemeToggle />
         </div>
       </header>
 
@@ -451,7 +466,12 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <ChatInput onSend={handleSend} disabled={loading || !isReady} />
+      <ChatInput
+        onSend={handleSend}
+        onStop={() => abortControllerRef.current?.abort()}
+        disabled={!isReady}
+        loading={loading}
+      />
     </div>
   );
 }

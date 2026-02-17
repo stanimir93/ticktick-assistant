@@ -7,6 +7,16 @@ function authHeaders(token: string): Record<string, string> {
   };
 }
 
+async function safeJson<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text) return {} as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Invalid JSON response: ${text.slice(0, 200)}`);
+  }
+}
+
 // --- OAuth ---
 
 export function getAuthorizeUrl(clientId: string, redirectUri: string, state: string): string {
@@ -60,7 +70,7 @@ export async function getProjects(token: string): Promise<Project[]> {
     headers: authHeaders(token),
   });
   if (!res.ok) throw new Error(`Failed to fetch projects: ${res.status}`);
-  return res.json();
+  return safeJson<Project[]>(res);
 }
 
 // --- Tasks ---
@@ -93,7 +103,7 @@ export async function getProjectData(
     { headers: authHeaders(token) }
   );
   if (!res.ok) throw new Error(`Failed to fetch project data: ${res.status}`);
-  return res.json();
+  return safeJson<ProjectData>(res);
 }
 
 export async function createTask(
@@ -116,7 +126,7 @@ export async function createTask(
     body: JSON.stringify(task),
   });
   if (!res.ok) throw new Error(`Failed to create task: ${res.status}`);
-  return res.json();
+  return safeJson<Task>(res);
 }
 
 export async function updateTask(
@@ -140,7 +150,7 @@ export async function updateTask(
     body: JSON.stringify(updates),
   });
   if (!res.ok) throw new Error(`Failed to update task: ${res.status}`);
-  return res.json();
+  return safeJson<Task>(res);
 }
 
 export async function deleteTask(
