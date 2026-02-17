@@ -82,7 +82,7 @@ export default {
 
     const url = new URL(request.url);
     const isV2 = url.pathname.startsWith('/api/ticktick-v2/');
-    const isV2SignIn = url.pathname === '/api/ticktick-v2/user/signin';
+    const isV2SignIn = url.pathname === '/api/ticktick-v2/user/signon';
 
     let targetUrl: string | undefined;
     for (const [prefix, base] of Object.entries(routes)) {

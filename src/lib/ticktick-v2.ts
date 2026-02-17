@@ -25,7 +25,7 @@ export async function signIn(
   password: string
 ): Promise<string> {
   const data = await ky
-    .post(`${PROXY_URL}/api/ticktick-v2/user/signin`, {
+    .post(`${PROXY_URL}/api/ticktick-v2/user/signon?wc=true&remember=true`, {
       json: { username, password },
       headers: {
         'Content-Type': 'application/json',

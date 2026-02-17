@@ -26,6 +26,14 @@ import { Switch } from '@/components/ui/switch';
 import ThemeToggle from '@/components/ThemeToggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 
 const allProviders: ProviderName[] = ['claude', 'openai', 'gemini', 'grok'];
 
@@ -158,7 +166,17 @@ export default function SettingsPage() {
       <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <h1 className="text-sm font-semibold">Settings</h1>
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href={import.meta.env.BASE_URL}>Chats</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Settings</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
         <div className="ml-auto">
           <ThemeToggle />
         </div>
