@@ -167,7 +167,7 @@ export default function ChatPage({ conversationId }: ChatPageProps) {
   // Track which conversation is currently active (ref avoids re-renders)
   const activeIdRef = useRef<string | null>(null);
 
-  const [providers] = useLocalStorage<ProvidersMap>('llm-providers', {});
+  const [providers, setProviders] = useLocalStorage<ProvidersMap>('llm-providers', {});
   const [activeProvider, setActiveProvider] = useLocalStorage<string | null>(
     'active-provider',
     null
@@ -180,6 +180,17 @@ export default function ChatPage({ conversationId }: ChatPageProps) {
   const conversationRef = useRef<Message[]>([
     { role: 'system', content: buildSystemPrompt() },
   ]);
+
+  const handleModelChange = useCallback(
+    (model: string) => {
+      if (!activeProvider) return;
+      const name = activeProvider as ProviderName;
+      const prev = providers[name];
+      if (!prev) return;
+      setProviders({ ...providers, [name]: { ...prev, model } });
+    },
+    [activeProvider, providers, setProviders]
+  );
 
   const configuredProviders = getConfiguredProviderNames(providers);
   const isReady =
@@ -390,6 +401,7 @@ export default function ChatPage({ conversationId }: ChatPageProps) {
             providers={providers}
             activeProvider={activeProvider}
             onSwitch={setActiveProvider}
+            onModelChange={handleModelChange}
           />
         </div>
       </header>
