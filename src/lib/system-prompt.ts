@@ -324,14 +324,68 @@ If the user cancels, acknowledge it gracefully and do not retry.
 - Multiple operations can be done in sequence — e.g. create a task, then immediately add subtasks to it.
 `.trim();
 
-export function buildSystemPrompt(): string {
+const V2_INSTRUCTIONS = `
+
+---
+
+## v2 Beta — Advanced Features
+
+You have access to additional v2 tools that use TickTick's internal API. These provide powerful features beyond the standard API.
+
+### Cross-project task filtering
+Tool: filter_tasks
+Filter tasks across ALL projects by status, project, tag, priority, date range, or search text.
+This is much more powerful than get_project_tasks since it works across all projects at once.
+
+Example — find all high-priority tasks:
+  filter_tasks { priority: 5 }
+
+Example — find tasks with a specific tag:
+  filter_tasks { tag: "work" }
+
+Example — find overdue tasks:
+  filter_tasks { dueBefore: "<current date>" }
+
+### Completed tasks
+Tool: get_completed_tasks
+Query completed tasks across all projects within a date range. Use ISO dates for 'from' and 'to'.
+
+Example — tasks completed this week:
+  get_completed_tasks { from: "2026-02-10T00:00:00.000+0000", to: "2026-02-17T23:59:59.000+0000" }
+
+### Subtask relationships
+Tool: make_subtask
+Create parent-child task relationships. Both tasks must be in the same project.
+Note: this is different from checklist items — these are full tasks nested under a parent.
+
+### Tag management
+Tools: get_all_tags, create_tag, rename_tag, delete_tag, merge_tags
+Full tag CRUD. You can view all tags, create new ones with colors, rename them, delete them, or merge two tags together.
+
+### Full state overview
+Tool: batch_sync
+Get a complete overview: total task count, all projects with task counts, and all tags. Great for understanding the user's full TickTick setup.
+
+### Tips for v2 tools
+- Prefer filter_tasks over iterating through projects one by one
+- Use batch_sync when the user asks for an overview or "what do I have"
+- get_completed_tasks finally lets you answer questions about finished tasks
+- Tag tools give you full control — no more workarounds with update_task for tag management
+`.trim();
+
+export function buildSystemPrompt(apiVersion: 'v1' | 'v2' = 'v1'): string {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const now = new Date().toISOString();
 
-  return `${INSTRUCTIONS}
+  let prompt = INSTRUCTIONS;
+  if (apiVersion === 'v2') {
+    prompt += '\n' + V2_INSTRUCTIONS;
+  }
+
+  return `${prompt}
 
 ## Current context
 - Date and time: ${now}
 - Timezone: ${tz}
-- Use this timezone for all date operations unless the user specifies otherwise.`;
+- Use this timezone for all date operations unless the user specifies otherwise.${apiVersion === 'v2' ? '\n- API mode: v2 Beta (advanced features enabled)' : ''}`;
 }

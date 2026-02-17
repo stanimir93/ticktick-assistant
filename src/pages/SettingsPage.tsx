@@ -3,7 +3,9 @@ import { useLocalStorage } from '@uidotdev/usehooks';
 import { Eye, EyeOff, Copy, Check } from 'lucide-react';
 import type { ProvidersMap, ProviderName, ProviderConfig } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
+import { type ApiVersion, API_VERSION_KEY, DEFAULT_API_VERSION, V2_USERNAME_KEY, V2_PASSWORD_KEY, V2_SESSION_KEY } from '@/lib/api-version';
 import { exchangeCodeForToken } from '@/lib/ticktick';
+import { signIn as v2SignIn } from '@/lib/ticktick-v2';
 import ProviderCard from '@/components/ProviderCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,6 +54,16 @@ export default function SettingsPage() {
   const [showClientSecret, setShowClientSecret] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // v2 Beta state
+  const [apiVersion] = useLocalStorage<ApiVersion>(API_VERSION_KEY, DEFAULT_API_VERSION);
+  const [v2Username, setV2Username] = useLocalStorage<string>(V2_USERNAME_KEY, '');
+  const [_v2Password, setV2Password] = useLocalStorage<string>(V2_PASSWORD_KEY, '');
+  const [v2Session, setV2Session] = useLocalStorage<string | null>(V2_SESSION_KEY, null);
+  const [v2UsernameInput, setV2UsernameInput] = useState('');
+  const [v2PasswordInput, setV2PasswordInput] = useState('');
+  const [v2SigningIn, setV2SigningIn] = useState(false);
+  const [v2Error, setV2Error] = useState<string | null>(null);
 
   const handleCopy = (value: string, field: string) => {
     if (!value.trim()) return;
@@ -135,6 +147,32 @@ export default function SettingsPage() {
     }
   };
 
+  const handleV2SignIn = async () => {
+    const username = v2UsernameInput.trim();
+    const password = v2PasswordInput.trim();
+    if (!username || !password) return;
+    setV2SigningIn(true);
+    setV2Error(null);
+    try {
+      const session = await v2SignIn(username, password);
+      setV2Session(session);
+      setV2Username(username);
+      setV2Password(password);
+      setV2UsernameInput('');
+      setV2PasswordInput('');
+    } catch (err) {
+      setV2Error(err instanceof Error ? err.message : 'Sign-in failed');
+    } finally {
+      setV2SigningIn(false);
+    }
+  };
+
+  const handleV2Disconnect = () => {
+    setV2Session(null);
+    setV2Username('');
+    setV2Password('');
+  };
+
   const handleProviderRemove = (name: ProviderName) => {
     setProviders((prev) => {
       const next = { ...prev };
@@ -168,7 +206,7 @@ export default function SettingsPage() {
               <div className="flex items-center justify-between">
                 <Badge
                   variant="secondary"
-                  className="bg-green-100 text-green-700"
+                  className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
                 >
                   Connected to TickTick
                 </Badge>
@@ -307,7 +345,7 @@ export default function SettingsPage() {
             {oauthStatus && (
               <p
                 className={`mt-2 text-sm ${
-                  oauthStatus.ok ? 'text-green-600' : 'text-destructive'
+                  oauthStatus.ok ? 'text-green-600 dark:text-green-400' : 'text-destructive'
                 }`}
               >
                 {oauthStatus.message}
@@ -316,6 +354,72 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </section>
+
+      {/* v2 Beta Auth Section */}
+      {apiVersion === 'v2' && (
+        <section className="mb-8">
+          <h2 className="mb-4 text-lg font-semibold flex items-center gap-2">
+            v2 Beta Authentication
+            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-orange-400 text-orange-500">
+              BETA
+            </Badge>
+          </h2>
+          <Card>
+            <CardContent className="pt-6">
+              {v2Session ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
+                      v2 Session Active
+                    </Badge>
+                    {v2Username && (
+                      <span className="text-sm text-muted-foreground">({v2Username})</span>
+                    )}
+                  </div>
+                  <Button onClick={handleV2Disconnect} variant="destructive" size="sm">
+                    Disconnect
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    Sign in with your TickTick account to enable advanced features like cross-project filtering, completed tasks, tag management, and subtasks.
+                  </p>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="v2-username">TickTick Email/Username</Label>
+                    <Input
+                      id="v2-username"
+                      value={v2UsernameInput}
+                      onChange={(e) => setV2UsernameInput(e.target.value)}
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="v2-password">Password</Label>
+                    <Input
+                      id="v2-password"
+                      type="password"
+                      value={v2PasswordInput}
+                      onChange={(e) => setV2PasswordInput(e.target.value)}
+                      placeholder="Your TickTick password"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleV2SignIn}
+                    disabled={!v2UsernameInput.trim() || !v2PasswordInput.trim() || v2SigningIn}
+                    className="w-full"
+                  >
+                    {v2SigningIn ? 'Signing in...' : 'Sign In'}
+                  </Button>
+                  {v2Error && (
+                    <p className="text-sm text-destructive">{v2Error}</p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </section>
+      )}
 
       {/* LLM Providers Section */}
       <section className="mb-8">

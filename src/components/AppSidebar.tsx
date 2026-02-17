@@ -1,6 +1,8 @@
 import { useMatch, useNavigate, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useLocalStorage } from '@uidotdev/usehooks';
 import { db, type Conversation } from '@/lib/db';
+import { type ApiVersion, API_VERSION_KEY, DEFAULT_API_VERSION } from '@/lib/api-version';
 import {
   Sidebar,
   SidebarContent,
@@ -16,6 +18,8 @@ import {
   SidebarSeparator,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import {
   MessageSquarePlus,
   Settings,
@@ -29,6 +33,7 @@ export function AppSidebar() {
   const activeConversationId = chatMatch?.params.conversationId;
   const navigate = useNavigate();
   const { isMobile, setOpenMobile } = useSidebar();
+  const [apiVersion, setApiVersion] = useLocalStorage<ApiVersion>(API_VERSION_KEY, DEFAULT_API_VERSION);
   const conversations = useLiveQuery(() =>
     db.conversations.orderBy('updatedAt').reverse().toArray()
   );
@@ -69,7 +74,7 @@ export function AppSidebar() {
               <div className="flex flex-col gap-0.5 leading-none">
                 <span className="font-semibold">TickTick Assistant</span>
                 <span className="text-xs text-sidebar-foreground/70">
-                  AI Task Manager
+                  AI Task Manager{apiVersion === 'v2' ? ' (v2 Beta)' : ''}
                 </span>
               </div>
             </SidebarMenuButton>
@@ -139,6 +144,18 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
+          <SidebarMenuItem>
+            <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer">
+              <Switch
+                checked={apiVersion === 'v2'}
+                onCheckedChange={(checked) => setApiVersion(checked ? 'v2' : 'v1')}
+              />
+              <span className="text-sm">v2</span>
+              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-orange-400 text-orange-500">
+                BETA
+              </Badge>
+            </label>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link to="/settings">

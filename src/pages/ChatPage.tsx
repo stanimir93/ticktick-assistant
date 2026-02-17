@@ -5,9 +5,11 @@ import type { ProvidersMap, ProviderName } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
 import { getProvider } from '@/lib/llm';
 import type { Message } from '@/lib/llm/types';
-import { toolDefinitions } from '@/lib/tools';
+import { type ApiVersion, API_VERSION_KEY, DEFAULT_API_VERSION, V2_SESSION_KEY } from '@/lib/api-version';
+import { getToolDefinitions } from '@/lib/tools-registry';
 import { runToolLoop } from '@/lib/tool-loop';
 import { buildSystemPrompt } from '@/lib/system-prompt';
+import { Badge } from '@/components/ui/badge';
 import { db, type StoredMessage } from '@/lib/db';
 import ChatMessage from '@/components/ChatMessage';
 import type {
@@ -148,9 +150,11 @@ export default function ChatPage() {
     'ticktick-token',
     null
   );
+  const [apiVersion] = useLocalStorage<ApiVersion>(API_VERSION_KEY, DEFAULT_API_VERSION);
+  const [v2Session] = useLocalStorage<string | null>(V2_SESSION_KEY, null);
 
   const conversationRef = useRef<Message[]>([
-    { role: 'system', content: buildSystemPrompt() },
+    { role: 'system', content: buildSystemPrompt(apiVersion) },
   ]);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -166,8 +170,10 @@ export default function ChatPage() {
   );
 
   const configuredProviders = getConfiguredProviderNames(providers);
+  const v2Ready = apiVersion === 'v1' || !!v2Session;
   const isReady =
-    !!ticktickToken && !!activeProvider && configuredProviders.length > 0;
+    !!ticktickToken && !!activeProvider && configuredProviders.length > 0 && v2Ready;
+  const tools = getToolDefinitions(apiVersion);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -181,7 +187,7 @@ export default function ChatPage() {
     if (!conversationId) {
       dispatch({ type: 'load_messages', messages: [] });
       conversationRef.current = [
-        { role: 'system', content: buildSystemPrompt() },
+        { role: 'system', content: buildSystemPrompt(apiVersion) },
       ];
       return;
     }
@@ -198,7 +204,7 @@ export default function ChatPage() {
       dispatch({ type: 'load_messages', messages: restored });
 
       const llmMessages: Message[] = [
-        { role: 'system', content: buildSystemPrompt() },
+        { role: 'system', content: buildSystemPrompt(apiVersion) },
       ];
       for (const m of conv.messages) {
         if (m.role === 'user') {
@@ -290,7 +296,7 @@ export default function ChatPage() {
           await runToolLoop(
             provider,
             conversationRef.current,
-            toolDefinitions,
+            tools,
             providerConfig.model,
             providerConfig.apiKey,
             ticktickToken!,
@@ -340,7 +346,9 @@ export default function ChatPage() {
                 });
               },
             },
-            abortController.signal
+            abortController.signal,
+            apiVersion,
+            v2Session ?? undefined
           );
 
         conversationRef.current = updatedMessages;
@@ -371,7 +379,7 @@ export default function ChatPage() {
         setLoading(false);
       }
     },
-    [isReady, activeProvider, providers, ticktickToken, navigate]
+    [isReady, activeProvider, providers, ticktickToken, navigate, tools, apiVersion, v2Session]
   );
 
   return (
@@ -380,7 +388,14 @@ export default function ChatPage() {
       <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <h1 className="text-sm font-semibold">TickTick Assistant</h1>
+        <h1 className="text-sm font-semibold flex items-center gap-1.5">
+          TickTick Assistant
+          {apiVersion === 'v2' && (
+            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-orange-400 text-orange-500">
+              v2 BETA
+            </Badge>
+          )}
+        </h1>
         <div className="ml-auto flex items-center gap-2">
           <ProviderSwitcher
             providers={providers}
@@ -396,12 +411,15 @@ export default function ChatPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-3xl space-y-4 p-4">
           {!isReady && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
               {!ticktickToken && (
                 <p>Connect your TickTick account in Settings.</p>
               )}
               {configuredProviders.length === 0 && (
                 <p>Configure at least one LLM provider in Settings.</p>
+              )}
+              {apiVersion === 'v2' && !v2Session && !!ticktickToken && (
+                <p>v2 Beta mode is active but no session found. Sign in with your TickTick credentials in Settings.</p>
               )}
               <button
                 onClick={() => navigate('/settings')}

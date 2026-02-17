@@ -1,6 +1,7 @@
 import type { LLMProvider, LLMParsedResponse } from './llm/base';
 import type { Message, ToolDefinition, ToolCall } from './llm/types';
-import { executeTool } from './tools';
+import type { ApiVersion } from './api-version';
+import { executeTool } from './tools-registry';
 
 export interface PendingConfirmation {
   toolCall: ToolCall;
@@ -22,7 +23,9 @@ export async function runToolLoop(
   apiKey: string,
   ticktickToken: string,
   callbacks?: ToolLoopCallbacks,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  apiVersion: ApiVersion = 'v1',
+  sessionToken?: string
 ): Promise<{ text: string; messages: Message[] }> {
   const conversationMessages = [...messages];
   const maxIterations = 10;
@@ -96,9 +99,11 @@ export async function runToolLoop(
       callbacks?.onToolCall?.(toolCall);
 
       const result = await executeTool(
+        apiVersion,
         toolCall.name,
         toolCall.arguments,
-        ticktickToken
+        ticktickToken,
+        sessionToken
       );
 
       callbacks?.onToolResult?.(toolCall.id, toolCall.name, result);

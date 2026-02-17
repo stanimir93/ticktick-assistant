@@ -104,12 +104,12 @@ export default function ProviderCard({
   };
 
   return (
-    <Card className={isConfigured ? 'border-green-300 bg-green-50/50' : ''}>
+    <Card className={isConfigured ? 'border-green-300 bg-green-50/50 dark:border-green-800/40 dark:bg-green-950/20' : ''}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">{providerLabels[name]}</CardTitle>
           {isConfigured && (
-            <Badge variant="secondary" className="bg-green-100 text-green-700">
+            <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400">
               Configured
             </Badge>
           )}
@@ -188,7 +188,7 @@ export default function ProviderCard({
         {testResult && (
           <p
             className={`text-sm ${
-              testResult.ok ? 'text-green-600' : 'text-destructive'
+              testResult.ok ? 'text-green-600 dark:text-green-400' : 'text-destructive'
             }`}
           >
             {testResult.message}
