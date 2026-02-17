@@ -143,10 +143,20 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
               <Markdown
                 remarkPlugins={[remarkGfm]}
                 components={{
+                  h3: ({ children, ...props }) => (
+                    <h3 {...props} className="text-base font-semibold mt-6 mb-3">
+                      {children}
+                    </h3>
+                  ),
                   li: ({ children, ...props }) => (
                     <li {...props} className="mb-3 pb-3 border-b border-border/40 last:border-0 last:mb-0 last:pb-0">
                       {children}
                     </li>
+                  ),
+                  em: ({ children, ...props }) => (
+                    <em {...props} className="text-muted-foreground font-light not-italic text-xs">
+                      {children}
+                    </em>
                   ),
                   a: ({ children, href, ...props }) => {
                     if (
