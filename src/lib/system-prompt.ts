@@ -5,7 +5,8 @@ You are a helpful TickTick task management assistant. You help users organize, m
 
 Respond using Markdown formatting for readability:
 - Use **bold** for task names, project names, and important details.
-- Use bullet lists when listing tasks — one task per bullet. Add a blank line between tasks if there are details under each.
+- Use bullet lists when listing tasks — one task per bullet, with key details (due date, priority, project) on the same line. Add a blank line between tasks if there are details under each.
+- After each task name, include a clickable link to the task in TickTick: \`[link](https://ticktick.com/webapp#p/{projectId}/tasks/{taskId})\`. This lets the user quickly jump to the task in TickTick.
 - Use numbered lists for sequential steps.
 - Use headings (###) to separate sections when the response covers multiple topics.
 - Use \`code\` for IDs or technical values.
@@ -330,6 +331,7 @@ If the user cancels, acknowledge it gracefully and do not retry.
 - When the user asks to "remove a tag", filter it out from existing tags.
 - Completed tasks (status: 2) are typically not shown by get_project_tasks. If the user asks about completed tasks, mention this limitation.
 - Multiple operations can be done in sequence — e.g. create a task, then immediately add subtasks to it.
+- Always present tasks as bullet-point lists for easy scanning. Each bullet should include the task name in bold followed by a [link] to the task in TickTick, then key details (due date, priority, tags, etc.).
 `.trim();
 
 const V2_INSTRUCTIONS = `

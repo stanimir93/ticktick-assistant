@@ -134,7 +134,18 @@ export default function ChatMessage({ message, isThinking }: ChatMessageProps) {
             {isUser ? (
               <p className="m-0">{message.content}</p>
             ) : (
-              <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
+              <Markdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a: ({ children, ...props }) => (
+                    <a {...props} target="_blank" rel="noopener noreferrer">
+                      {children}
+                    </a>
+                  ),
+                }}
+              >
+                {message.content}
+              </Markdown>
             )}
           </div>
         )}
