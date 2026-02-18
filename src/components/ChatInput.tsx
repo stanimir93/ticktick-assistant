@@ -54,9 +54,9 @@ export default function ChatInput({ onSend, onStop, disabled, loading }: ChatInp
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onInput={handleInput}
-          disabled={disabled || loading}
+          disabled={disabled}
           placeholder={
-            loading ? 'Waiting for response...' : 'Type a message...'
+            loading ? 'Type ahead while waiting...' : 'Type a message...'
           }
           autoFocus
           rows={1}
