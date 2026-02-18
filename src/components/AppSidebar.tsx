@@ -1,7 +1,7 @@
 import { useMatch, useNavigate, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 
-import { db, type Conversation } from '@/lib/db';
+import { db } from '@/lib/db';
 import {
   Sidebar,
   SidebarContent,
@@ -34,16 +34,6 @@ export function AppSidebar() {
     db.conversations.orderBy('updatedAt').reverse().toArray()
   );
 
-  const handleSelect = (conv: Conversation) => {
-    navigate(`/chat/${conv.id}`);
-    if (isMobile) setOpenMobile(false);
-  };
-
-  const handleNewChat = () => {
-    navigate('/');
-    if (isMobile) setOpenMobile(false);
-  };
-
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     await db.conversations.delete(id);
@@ -63,16 +53,18 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" onClick={handleNewChat}>
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                <MessageSquare className="size-4" />
-              </div>
-              <div className="flex flex-col gap-0.5 leading-none">
-                <span className="font-semibold">TickTick Assistant</span>
-                <span className="text-xs text-sidebar-foreground/70">
-                  AI Task Manager
-                </span>
-              </div>
+            <SidebarMenuButton size="lg" asChild>
+              <Link to="/" onClick={() => isMobile && setOpenMobile(false)}>
+                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <MessageSquare className="size-4" />
+                </div>
+                <div className="flex flex-col gap-0.5 leading-none">
+                  <span className="font-semibold">TickTick Assistant</span>
+                  <span className="text-xs text-sidebar-foreground/70">
+                    AI Task Manager
+                  </span>
+                </div>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -86,26 +78,33 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleNewChat} className="justify-between">
-                  <span className="flex items-center gap-2">
-                    <MessageSquarePlus className="size-4" />
-                    <span>New Chat</span>
-                  </span>
-                  <kbd className="text-[10px] text-muted-foreground">
-                    {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl+'}J
-                  </kbd>
+                <SidebarMenuButton asChild className="justify-between">
+                  <Link to="/" onClick={() => isMobile && setOpenMobile(false)}>
+                    <span className="flex items-center gap-2">
+                      <MessageSquarePlus className="size-4" />
+                      <span>New Chat</span>
+                    </span>
+                    <kbd className="text-[10px] text-muted-foreground">
+                      {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl+'}J
+                    </kbd>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {conversations?.map((conv) => (
                 <SidebarMenuItem key={conv.id}>
                   <SidebarMenuButton
                     isActive={conv.id === activeConversationId}
-                    onClick={() => handleSelect(conv)}
                     tooltip={conv.title || 'New conversation'}
+                    asChild
                   >
-                    <span className="truncate">
-                      {conv.title || 'New conversation'}
-                    </span>
+                    <Link
+                      to={`/chat/${conv.id}`}
+                      onClick={() => isMobile && setOpenMobile(false)}
+                    >
+                      <span className="truncate">
+                        {conv.title || 'New conversation'}
+                      </span>
+                    </Link>
                   </SidebarMenuButton>
                   <SidebarMenuAction
                     onClick={(e) => handleDelete(e, conv.id)}
