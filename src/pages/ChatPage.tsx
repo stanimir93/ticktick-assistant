@@ -1,5 +1,5 @@
 import { useState, useReducer, useRef, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useLocalStorage } from '@uidotdev/usehooks';
 import type { ProvidersMap, ProviderName } from '@/lib/storage';
 import { getConfiguredProviderNames } from '@/lib/storage';
@@ -397,7 +397,9 @@ export default function ChatPage() {
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         <h1 className="text-sm font-semibold flex items-center gap-1.5">
-          TickTick Assistant
+          <Link to="/" className="hover:opacity-80">
+            TickTick Assistant
+          </Link>
           {apiVersion === 'v2' && (
             <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-orange-400 text-orange-500">
               v2 BETA
