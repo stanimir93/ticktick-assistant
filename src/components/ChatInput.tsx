@@ -66,7 +66,7 @@ export default function ChatInput({ onSend, onStop, disabled, loading }: ChatInp
           <Button
             onClick={onStop}
             variant="destructive"
-            className="self-end"
+            className="self-end h-[40px]"
           >
             <Square className="h-4 w-4" />
           </Button>
@@ -74,7 +74,7 @@ export default function ChatInput({ onSend, onStop, disabled, loading }: ChatInp
           <Button
             onClick={handleSubmit}
             disabled={!value.trim() || disabled}
-            className="self-end"
+            className="self-end h-[40px]"
           >
             Send
           </Button>
