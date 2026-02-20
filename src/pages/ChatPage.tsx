@@ -22,8 +22,10 @@ import type {
 import ChatInput from '@/components/ChatInput';
 import ProviderSwitcher from '@/components/ProviderSwitcher';
 import ThemeToggle from '@/components/ThemeToggle';
+import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
+import { SquarePen } from 'lucide-react';
 
 
 type ChatAction =
@@ -396,7 +398,14 @@ export default function ChatPage() {
       <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
-        <h1 className="text-sm font-semibold flex items-center gap-1.5">
+        {/* Mobile: New Chat button replaces title */}
+        <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" asChild>
+          <Link to="/">
+            <SquarePen className="h-4 w-4" />
+          </Link>
+        </Button>
+        {/* Desktop: Show title */}
+        <h1 className="hidden md:flex text-sm font-semibold items-center gap-1.5">
           <Link to="/" className="hover:opacity-80">
             TickTick Assistant
           </Link>
@@ -407,6 +416,12 @@ export default function ChatPage() {
           )}
         </h1>
         <div className="ml-auto flex items-center gap-2">
+          {/* Desktop: New Chat button */}
+          <Button variant="ghost" size="icon" className="hidden md:inline-flex h-8 w-8" asChild>
+            <Link to="/">
+              <SquarePen className="h-4 w-4" />
+            </Link>
+          </Button>
           <ProviderSwitcher
             providers={providers}
             activeProvider={activeProvider}
