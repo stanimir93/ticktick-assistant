@@ -397,7 +397,7 @@ export default function ChatPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-3">
         <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-1 h-4" />
+        <Separator orientation="vertical" className="mr-1.5 sm:mr-2 h-4" />
         {/* Mobile: New Chat button replaces title */}
         <Button variant="ghost" size="icon-lg" className="md:hidden" disabled={!conversationId} asChild={!!conversationId}>
           {conversationId ? (
