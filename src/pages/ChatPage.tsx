@@ -399,10 +399,14 @@ export default function ChatPage() {
         <SidebarTrigger className="-ml-1 !size-9 md:!size-7" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         {/* Mobile: New Chat button replaces title */}
-        <Button variant="ghost" size="icon" className="md:hidden h-9 w-9" asChild>
-          <Link to="/">
+        <Button variant="ghost" size="icon" className="md:hidden h-9 w-9" disabled={!conversationId} asChild={!!conversationId}>
+          {conversationId ? (
+            <Link to="/">
+              <SquarePen className="h-5 w-5" />
+            </Link>
+          ) : (
             <SquarePen className="h-5 w-5" />
-          </Link>
+          )}
         </Button>
         {/* Desktop: Show title */}
         <h1 className="hidden md:flex text-sm font-semibold items-center gap-1.5">
@@ -417,10 +421,14 @@ export default function ChatPage() {
         </h1>
         <div className="ml-auto flex items-center gap-2">
           {/* Desktop: New Chat button */}
-          <Button variant="ghost" size="icon" className="hidden md:inline-flex h-8 w-8" asChild>
-            <Link to="/">
+          <Button variant="ghost" size="icon" className="hidden md:inline-flex h-8 w-8" disabled={!conversationId} asChild={!!conversationId}>
+            {conversationId ? (
+              <Link to="/">
+                <SquarePen className="h-4 w-4" />
+              </Link>
+            ) : (
               <SquarePen className="h-4 w-4" />
-            </Link>
+            )}
           </Button>
           <ProviderSwitcher
             providers={providers}
