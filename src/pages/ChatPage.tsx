@@ -396,16 +396,16 @@ export default function ChatPage() {
     <div className="flex h-full flex-col">
       {/* Header */}
       <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center gap-2 border-b bg-background px-3">
-        <SidebarTrigger className="-ml-1 !size-10 md:!size-7" />
+        <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         {/* Mobile: New Chat button replaces title */}
-        <Button variant="ghost" size="icon-lg" className="md:hidden" disabled={!conversationId} asChild={!!conversationId}>
+        <Button variant="ghost" size="icon-lg" className="md:hidden [&_svg]:size-5" disabled={!conversationId} asChild={!!conversationId}>
           {conversationId ? (
             <Link to="/">
-              <SquarePen className="h-5 w-5" />
+              <SquarePen />
             </Link>
           ) : (
-            <SquarePen className="h-5 w-5" />
+            <SquarePen />
           )}
         </Button>
         {/* Desktop: Show title */}
