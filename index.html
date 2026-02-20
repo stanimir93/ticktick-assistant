@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/ticktick-assistant/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TickTick Assistant</title>
     <!-- Start Single Page Apps for GitHub Pages -->
     <script type="text/javascript">
@@ -23,6 +23,22 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Resize app to visual viewport so the keyboard shrinks the content
+      // instead of pushing the page up (fixes iOS Safari)
+      (function() {
+        var vv = window.visualViewport;
+        if (!vv) return;
+        function onResize() {
+          document.documentElement.style.setProperty('--app-height', vv.height + 'px');
+          // Counteract iOS scroll-to-input behavior
+          window.scrollTo(0, 0);
+        }
+        vv.addEventListener('resize', onResize);
+        vv.addEventListener('scroll', onResize);
+        onResize();
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
