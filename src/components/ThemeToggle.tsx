@@ -14,13 +14,13 @@ export default function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-lg" className="md:size-9 [&_svg]:size-5 md:[&_svg]:size-4">
+        <Button variant="ghost" size="icon-lg" className="md:size-9">
           {theme === 'dark' ? (
-            <Moon />
+            <Moon className="size-5 md:size-4" />
           ) : theme === 'light' ? (
-            <Sun />
+            <Sun className="size-5 md:size-4" />
           ) : (
-            <Monitor />
+            <Monitor className="size-5 md:size-4" />
           )}
           <span className="sr-only">Toggle theme</span>
         </Button>

@@ -399,13 +399,13 @@ export default function ChatPage() {
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mr-2 h-4" />
         {/* Mobile: New Chat button replaces title */}
-        <Button variant="ghost" size="icon-lg" className="md:hidden [&_svg]:size-5" disabled={!conversationId} asChild={!!conversationId}>
+        <Button variant="ghost" size="icon-lg" className="md:hidden" disabled={!conversationId} asChild={!!conversationId}>
           {conversationId ? (
             <Link to="/">
-              <SquarePen />
+              <SquarePen className="size-5" />
             </Link>
           ) : (
-            <SquarePen />
+            <SquarePen className="size-5" />
           )}
         </Button>
         {/* Desktop: Show title */}
