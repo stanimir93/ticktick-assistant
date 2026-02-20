@@ -402,10 +402,10 @@ export default function ChatPage() {
         <Button variant="ghost" size="icon-lg" className="md:hidden" disabled={!conversationId} asChild={!!conversationId}>
           {conversationId ? (
             <Link to="/">
-              <SquarePen className="size-5" />
+              <SquarePen className="size-[18px]" />
             </Link>
           ) : (
-            <SquarePen className="size-5" />
+            <SquarePen className="size-[18px]" />
           )}
         </Button>
         {/* Desktop: Show title */}
