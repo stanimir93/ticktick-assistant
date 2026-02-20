@@ -90,8 +90,8 @@ export const openaiProvider = createOpenAICompatibleProvider(
   'openai',
   '/api/llm/openai',
   {
-    default: 'gpt-4.1',
-    options: ['gpt-4.1', 'gpt-4.1-mini', 'o3', 'o4-mini'],
+    default: 'gpt-5',
+    options: ['gpt-5', 'gpt-5-mini', 'gpt-5-nano', 'gpt-5.1', 'gpt-5.2', 'o3'],
   }
 );
 
@@ -99,7 +99,7 @@ export const grokProvider = createOpenAICompatibleProvider(
   'grok',
   '/api/llm/grok',
   {
-    default: 'grok-4-fast-non-reasoning',
-    options: ['grok-4-fast-non-reasoning', 'grok-4-1-fast-non-reasoning', 'grok-3'],
+    default: 'grok-4-1-fast-non-reasoning',
+    options: ['grok-4-1-fast-non-reasoning', 'grok-4-1-fast-reasoning', 'grok-4-fast-non-reasoning', 'grok-4-fast-reasoning', 'grok-3'],
   }
 );
