@@ -9,9 +9,9 @@ export const claudeProvider: LLMProvider = {
   models: {
     default: 'claude-sonnet-4-6',
     options: [
+      'claude-opus-4-6',
       'claude-sonnet-4-6',
       'claude-haiku-4-5-20251001',
-      'claude-opus-4-6',
     ],
   },
 
